@@ -1,0 +1,80 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id          String   @id @default(cuid())
+  username    String   @unique
+  password    String
+  permissions String[] @default([])
+  isAdmin     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("users")
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  phone     String?
+  email     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  invoices  Invoice[]
+  bills     Bill[]
+  
+  @@map("customers")
+}
+
+model Invoice {
+  id          String     @id @default(cuid())
+  customerId  String
+  description String
+  quantity    Float
+  unitPrice   Float
+  totalPrice  Float
+  workDate    DateTime
+  status      InvoiceStatus @default(ACTIVE)
+  billId      String?    // 所属账单表单ID
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  
+  customer    Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  bill        Bill?      @relation(fields: [billId], references: [id], onDelete: Cascade)
+  
+  @@map("invoices")
+}
+
+model Bill {
+  id            String     @id @default(cuid())
+  customerId    String     // 账单所属客户
+  title         String     // 账单标题
+  totalAmount   Float      // 账单总金额
+  status        BillStatus @default(PENDING)
+  completedAt   DateTime?  // 结账日期
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  
+  customer      Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  invoices      Invoice[]
+  
+  @@map("bills")
+}
+
+enum InvoiceStatus {
+  ACTIVE      // 总账单中的活跃记录
+}
+
+enum BillStatus {
+  PENDING     // 待结账单
+  COMPLETED   // 已结账单
+}
