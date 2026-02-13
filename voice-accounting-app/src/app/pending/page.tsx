@@ -15,7 +15,7 @@ type BillWithInvoices = Bill & {
 }
 
 export default function PendingPage() {
-  const { user, logout } = useAuth()
+  const { user, logout, hasPermission } = useAuth()
   const [bills, setBills] = useState<BillWithInvoices[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
   const [loading, setLoading] = useState(true)
@@ -156,7 +156,7 @@ const fetchBills = async () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation user={user} onLogout={logout} />
-      
+
       <div className="py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-white shadow rounded-lg">
@@ -179,7 +179,7 @@ const fetchBills = async () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="p-6">
               <div className="mb-6">
                 <FilterBar
@@ -189,33 +189,31 @@ const fetchBills = async () => {
                   onCustomerDeleted={handleCustomerDeleted}
                 />
               </div>
-              
+
               {loading ? (
                 <div className="flex justify-center items-center h-64">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
                 </div>
-                  ) : (
-                    <div className="space-y-6">
-                      {bills.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">
-                          暂无待结账单
-                        </div>
-                      ) : (
-                        bills.map((bill) => (
-                          <BillCard
-                            key={bill.id}
-                            bill={bill}
-                            onConfirm={handleConfirmBill}
-                            onManage={handleManageBill}
-                            onDelete={hasPermission('pending-bill:delete') ? handleDeleteBill : undefined}
-                            onPrint={handlePrintBill}
-                          />
-                        ))
-                      )}
+              ) : (
+                <div className="space-y-6">
+                  {bills.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      暂无待结账单
                     </div>
+                  ) : (
+                    bills.map((bill) => (
+                      <BillCard
+                        key={bill.id}
+                        bill={bill}
+                        onConfirm={handleConfirmBill}
+                        onManage={handleManageBill}
+                        onDelete={hasPermission('pending-bill:delete') ? handleDeleteBill : undefined}
+                        onPrint={handlePrintBill}
+                      />
+                    ))
                   )}
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

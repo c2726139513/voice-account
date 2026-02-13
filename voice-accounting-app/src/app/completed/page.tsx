@@ -14,7 +14,7 @@ type BillWithInvoices = Bill & {
 }
 
 export default function CompletedPage() {
-  const { user, logout } = useAuth()
+  const { user, logout, hasPermission } = useAuth()
   const [bills, setBills] = useState<BillWithInvoices[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
   const [loading, setLoading] = useState(false)
