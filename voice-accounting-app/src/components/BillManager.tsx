@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Bill, Customer, Invoice } from '@prisma/client'
+import { useAuth } from '@/contexts/AuthContext'
 
 type BillWithInvoices = Bill & {
   customer: Customer
@@ -21,10 +22,13 @@ interface BillManagerProps {
 }
 
 export default function BillManager({ bill, onClose, onUpdate }: BillManagerProps) {
+  const { hasPermission } = useAuth()
   const [availableInvoices, setAvailableInvoices] = useState<InvoiceWithCustomer[]>([])
   const [selectedInvoices, setSelectedInvoices] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState<'remove' | 'add' | 'edit'>('remove')
+  const [activeTab, setActiveTab] = useState<'remove' | 'add' | 'edit'>(
+    hasPermission('pending-bill:revert') ? 'remove' : 'add'
+  )
   const [editingInvoice, setEditingInvoice] = useState<InvoiceWithCustomer | null>(null)
   const [editForm, setEditForm] = useState({
     description: '',
@@ -229,19 +233,21 @@ export default function BillManager({ bill, onClose, onUpdate }: BillManagerProp
 
         <div className="border-b border-gray-200">
           <div className="flex">
-            <button
-              onClick={() => {
-                setActiveTab('remove')
-                setSelectedInvoices([])
-              }}
-              className={`px-6 py-3 font-medium text-sm ${
-                activeTab === 'remove'
-                  ? 'border-b-2 border-blue-500 text-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              移除账单 ({(bill.invoices || []).length})
-            </button>
+            {hasPermission('pending-bill:revert') && (
+              <button
+                onClick={() => {
+                  setActiveTab('remove')
+                  setSelectedInvoices([])
+                }}
+                className={`px-6 py-3 font-medium text-sm ${
+                  activeTab === 'remove'
+                    ? 'border-b-2 border-blue-500 text-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                移除账单 ({(bill.invoices || []).length})
+              </button>
+            )}
             <button
               onClick={() => {
                 setActiveTab('add')
