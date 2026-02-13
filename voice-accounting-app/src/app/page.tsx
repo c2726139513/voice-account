@@ -125,7 +125,7 @@ export default function Home() {
     setCurrentPage(1)
   }
 
-  const handleCustomerDeleted = () => {
+  const handleCustomerDeleted = (deletedCustomerId: string) => {
     // 重新获取客户列表
     fetchCustomers()
   }

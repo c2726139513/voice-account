@@ -15,7 +15,7 @@ interface FilterBarProps {
     startDate: string
     endDate: string
   }) => void
-  onCustomerDeleted?: () => void
+  onCustomerDeleted?: (deletedCustomerId: string) => void
 }
 
 export default function FilterBar({ customers, filters, onFilterChange, onCustomerDeleted }: FilterBarProps) {
@@ -99,7 +99,7 @@ export default function FilterBar({ customers, filters, onFilterChange, onCustom
         }
         // 通知父组件刷新客户列表
         if (onCustomerDeleted) {
-          onCustomerDeleted()
+          onCustomerDeleted(customerId)
         }
       } else {
         alert(`删除客户失败: ${data.error}`)
