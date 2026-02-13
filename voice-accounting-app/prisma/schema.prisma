@@ -18,8 +18,19 @@ model User {
   isAdmin     Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
+
   @@map("users")
+}
+
+model Company {
+  id             String   @id @default(cuid())
+  name           String?
+  contactPerson  String?
+  contactPhone   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("companies")
 }
 
 model Customer {

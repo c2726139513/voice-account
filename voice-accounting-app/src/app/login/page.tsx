@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -12,6 +13,7 @@ export default function LoginPage() {
   const [checkingUsers, setCheckingUsers] = useState(true);
   const router = useRouter();
   const { login } = useAuth();
+  const { company } = useCompany();
 
   // 检查系统是否有用户
   useEffect(() => {
@@ -63,7 +65,7 @@ export default function LoginPage() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            登录语音记账系统
+            {company?.name ? `登录${company.name}` : '登录语音记账系统'}
           </h2>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>

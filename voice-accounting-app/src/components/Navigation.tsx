@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import { useCompany } from '@/contexts/CompanyContext'
 
 interface NavigationProps {
   user: any
@@ -12,16 +13,19 @@ interface NavigationProps {
 export default function Navigation({ user, onLogout }: NavigationProps) {
   const pathname = usePathname()
   const { hasPermission } = useAuth()
+  const { company } = useCompany()
 
   const navItems = [
     { href: '/', label: '总账单', active: pathname === '/' },
     { href: '/pending', label: '待结账单', active: pathname === '/pending' },
-    { href: '/completed', label: '已结账单', active: pathname === '/completed' }
+    { href: '/completed', label: '已结账单', active: pathname === '/completed' },
+    { href: '/admin/settings', label: '系统管理', active: pathname === '/admin/settings', adminOnly: true }
   ].filter(item => {
     // 根据权限过滤导航项
     if (item.href === '/' && !hasPermission('invoice:read')) return false
     if (item.href === '/pending' && !hasPermission('bill:read')) return false
     if (item.href === '/completed' && !hasPermission('bill:read')) return false
+    if ((item as any).adminOnly && !user?.isAdmin) return false
     return true
   })
 
@@ -31,7 +35,9 @@ export default function Navigation({ user, onLogout }: NavigationProps) {
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <h1 className="text-xl font-bold text-gray-900">语音记账系统</h1>
+              <h1 className="text-xl font-bold text-gray-900">
+                {company?.name || '语音记账系统'}
+              </h1>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
               {navItems.map((item) => (
