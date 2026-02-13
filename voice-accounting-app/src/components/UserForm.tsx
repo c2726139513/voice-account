@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { PERMISSION_GROUPS } from '@/lib/permissions'
 
 interface User {
   id: string
@@ -45,14 +46,10 @@ export default function UserForm({ user, onSave, onCancel, loading }: UserFormPr
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    // 所有用户默认拥有基础查看权限
-    const permissionList: string[] = [
-      'invoice:read',
-      'bill:read',
-      'customer:read'
-    ]
+    // 所有用户默认拥有操作员权限（包括创建、更新等）
+    const permissionList: string[] = [...PERMISSION_GROUPS.OPERATOR]
 
-    // 添加额外权限
+    // 添加额外权限（删除和回退权限）
     if (permissions.invoiceDelete) permissionList.push('invoice:delete')
     if (permissions.pendingBillDelete) permissionList.push('pending-bill:delete')
     if (permissions.pendingBillRevert) permissionList.push('pending-bill:revert')
