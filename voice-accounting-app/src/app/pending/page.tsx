@@ -213,6 +213,30 @@ const fetchBills = async () => {
                         ))
                       )}
                     </div>
-                  )
-}
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
+        {/* 账单管理弹窗 */}
+        {managingBill && (
+          <BillManager
+            bill={managingBill}
+            onClose={handleCloseManager}
+            onUpdate={handleCloseManager}
+          />
+        )}
+
+        {/* 打印账单弹窗 */}
+        {printingBill && (
+          <PrintBill
+            bill={printingBill}
+            onClose={handleClosePrint}
+          />
+        )}
+      </div>
+    </div>
+  )
+}
