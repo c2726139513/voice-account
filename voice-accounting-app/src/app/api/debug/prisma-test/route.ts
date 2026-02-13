@@ -27,14 +27,14 @@ export async function GET() {
     console.log('Invoices found (findMany):', invoices);
     
     // 4. 使用原始SQL验证
-    const rawResult = await prisma.$queryRaw`SELECT COUNT(*) as count FROM invoices WHERE "customerId" = ${customerId}`;
+    const rawResult = await prisma.$queryRaw<Array<{ count: bigint }>>`SELECT COUNT(*) as count FROM invoices WHERE "customerId" = ${customerId}`;
     console.log('Raw SQL result:', rawResult);
-    
+
     return Response.json({
       customer,
       invoiceCount,
       invoicesCount: invoices.length,
-      rawCount: rawResult[0]?.count || 0
+      rawCount: Number(rawResult[0]?.count || 0)
     });
   } catch (error) {
     console.error('Debug error:', error);
