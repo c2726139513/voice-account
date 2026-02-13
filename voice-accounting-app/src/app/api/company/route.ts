@@ -4,16 +4,6 @@ import { verifyToken } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get('token')?.value
-    if (!token) {
-      return NextResponse.json({ error: '未授权' }, { status: 401 })
-    }
-
-    const decoded = verifyToken(token)
-    if (!decoded) {
-      return NextResponse.json({ error: '无效的token' }, { status: 401 })
-    }
-
     let company = await prisma.company.findFirst()
 
     if (!company) {

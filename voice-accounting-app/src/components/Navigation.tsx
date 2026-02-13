@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCompany } from '@/contexts/CompanyContext'
 
@@ -12,8 +12,14 @@ interface NavigationProps {
 
 export default function Navigation({ user, onLogout }: NavigationProps) {
   const pathname = usePathname()
+  const router = useRouter()
   const { hasPermission } = useAuth()
   const { company } = useCompany()
+
+  const handleLogout = async () => {
+    await onLogout()
+    router.push('/login')
+  }
 
   const navItems = [
     { href: '/', label: '总账单', active: pathname === '/' },
@@ -63,7 +69,7 @@ export default function Navigation({ user, onLogout }: NavigationProps) {
               )}
             </span>
             <button
-              onClick={onLogout}
+              onClick={handleLogout}
               className="text-sm text-gray-500 hover:text-gray-700"
             >
               退出登录
