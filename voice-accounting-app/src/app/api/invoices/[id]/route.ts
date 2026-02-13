@@ -48,6 +48,25 @@ export async function PUT(
       }
     })
 
+    // 如果发票属于某个账单，更新账单的总金额
+    if (invoice.billId) {
+      const billInvoices = await prisma.invoice.findMany({
+        where: { billId: invoice.billId }
+      })
+
+      const totalAmount = billInvoices.reduce((sum, inv) => sum + inv.totalPrice, 0)
+
+      await prisma.bill.update({
+        where: { id: invoice.billId },
+        data: { totalAmount }
+      })
+
+      console.log('账单总金额已更新:', {
+        billId: invoice.billId,
+        totalAmount
+      })
+    }
+
     console.log('账单更新成功:', {
       id: invoice.id,
       customerId: invoice.customerId,
