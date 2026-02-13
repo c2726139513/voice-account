@@ -138,7 +138,7 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
                   <div className="title">{company.name}</div>
                   <div className="subtitle">
                     {company.contactPerson && `联系人：${company.contactPerson}`}
-                    {company.contactPerson && company.contactPhone && '     '}
+                    {company.contactPerson && company.contactPhone && '\u00A0\u00A0\u00A0\u00A0\u00A0'}
                     {company.contactPhone && `电话：${company.contactPhone}`}
                   </div>
                 </>
