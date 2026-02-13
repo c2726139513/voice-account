@@ -23,7 +23,7 @@ export default function UserForm({ user, onSave, onCancel, loading }: UserFormPr
   const [password, setPassword] = useState('')
   const [isAdmin, setIsAdmin] = useState(false)
   const [permissions, setPermissions] = useState({
-    billDelete: false,
+    invoiceDelete: false,
     pendingBillDelete: false,
     pendingBillRevert: false,
     completedBillRevert: false
@@ -34,7 +34,7 @@ export default function UserForm({ user, onSave, onCancel, loading }: UserFormPr
       setUsername(user.username)
       setIsAdmin(user.isAdmin)
       setPermissions({
-        billDelete: user.permissions.includes('bill:delete'),
+        invoiceDelete: user.permissions.includes('invoice:delete'),
         pendingBillDelete: user.permissions.includes('pending-bill:delete'),
         pendingBillRevert: user.permissions.includes('pending-bill:revert'),
         completedBillRevert: user.permissions.includes('completed-bill:revert')
@@ -53,7 +53,7 @@ export default function UserForm({ user, onSave, onCancel, loading }: UserFormPr
     ]
 
     // 添加额外权限
-    if (permissions.billDelete) permissionList.push('bill:delete')
+    if (permissions.invoiceDelete) permissionList.push('invoice:delete')
     if (permissions.pendingBillDelete) permissionList.push('pending-bill:delete')
     if (permissions.pendingBillRevert) permissionList.push('pending-bill:revert')
     if (permissions.completedBillRevert) permissionList.push('completed-bill:revert')
@@ -123,13 +123,13 @@ export default function UserForm({ user, onSave, onCancel, loading }: UserFormPr
               <div className="flex items-center">
                 <input
                   type="checkbox"
-                  id="billDelete"
-                  checked={permissions.billDelete}
-                  onChange={(e) => setPermissions({ ...permissions, billDelete: e.target.checked })}
+                  id="invoiceDelete"
+                  checked={permissions.invoiceDelete}
+                  onChange={(e) => setPermissions({ ...permissions, invoiceDelete: e.target.checked })}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
-                <label htmlFor="billDelete" className="ml-2 block text-sm text-gray-900">
-                  账单删除权限
+                <label htmlFor="invoiceDelete" className="ml-2 block text-sm text-gray-900">
+                  总账单删除权限
                 </label>
               </div>
 
