@@ -14,7 +14,7 @@ interface InvoiceListProps {
   totalPages: number
   onPageChange: (page: number) => void
   onPrepareBill: (selectedIds: string[]) => void
-  onDeleteInvoice: (invoiceId: string) => void
+  onDeleteInvoice?: (invoiceId: string) => void
   onEditInvoice: (invoice: InvoiceWithCustomer) => void
 }
 
@@ -58,7 +58,7 @@ export default function InvoiceList({
 
   const handleDeleteInvoice = (invoiceId: string) => {
     if (confirm('确定要删除这条账单吗？此操作不可恢复。')) {
-      onDeleteInvoice(invoiceId)
+      onDeleteInvoice?.(invoiceId)
     }
   }
 
@@ -169,12 +169,14 @@ export default function InvoiceList({
                   >
                     编辑
                   </button>
-                  <button
-                    onClick={() => handleDeleteInvoice(invoice.id)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    删除
-                  </button>
+                  {onDeleteInvoice && (
+                    <button
+                      onClick={() => handleDeleteInvoice(invoice.id)}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      删除
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

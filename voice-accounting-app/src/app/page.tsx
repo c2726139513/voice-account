@@ -403,7 +403,7 @@ export default function Home() {
                   onCustomerDeleted={handleCustomerDeleted}
                 />
               </div>
-              
+
               <InvoiceList
                 invoices={invoices}
                 loading={loading}
@@ -411,7 +411,7 @@ export default function Home() {
                 totalPages={totalPages}
                 onPageChange={setCurrentPage}
                 onPrepareBill={handlePrepareBill}
-                onDeleteInvoice={handleDeleteInvoice}
+                onDeleteInvoice={hasPermission(PERMISSIONS.INVOICE_DELETE) ? handleDeleteInvoice : undefined}
                 onEditInvoice={handleEditInvoice}
               />
             </div>
