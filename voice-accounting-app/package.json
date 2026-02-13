@@ -5,9 +5,10 @@
   "scripts": {
     "dev": "next dev",
     "dev:https": "node server.js",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "postinstall": "node scripts/migrate.js"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.3.0",
