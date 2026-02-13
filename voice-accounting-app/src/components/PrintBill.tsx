@@ -1,6 +1,7 @@
 'use client'
 
 import { Bill, Customer, Invoice } from '@prisma/client'
+import { useCompany } from '@/contexts/CompanyContext'
 
 type BillWithInvoices = Bill & {
   customer: Customer
@@ -15,21 +16,13 @@ interface PrintBillProps {
 }
 
 export default function PrintBill({ bill, onClose }: PrintBillProps) {
+  const { company } = useCompany()
+
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString('zh-CN', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit'
-    })
-  }
-
-  const formatDateTime = (date: Date) => {
-    return new Date(date).toLocaleString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
     })
   }
 
@@ -66,6 +59,10 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
               font-weight: bold;
               margin-bottom: 10px;
             }
+            .subtitle {
+              font-size: 16px;
+              color: #666;
+            }
             .info {
               display: flex;
               justify-content: space-between;
@@ -97,12 +94,6 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
               margin-top: 20px;
               font-size: 18px;
               font-weight: bold;
-            }
-            .footer {
-              margin-top: 50px;
-              text-align: center;
-              font-size: 12px;
-              color: #666;
             }
             @media print {
               body { margin: 0; }
@@ -141,10 +132,22 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
 
         <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 200px)' }}>
           <div id="print-content">
-            {/* 打印内容 */}
             <div className="header">
-              <div className="title">账单</div>
-              <div className="subtitle">{bill.title}</div>
+              {company?.name ? (
+                <>
+                  <div className="title">{company.name}</div>
+                  <div className="subtitle">
+                    {company.contactPerson && `联系人：${company.contactPerson}`}
+                    {company.contactPerson && company.contactPhone && ' | '}
+                    {company.contactPhone && `电话：${company.contactPhone}`}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="title">账单</div>
+                  <div className="subtitle">{bill.title}</div>
+                </>
+              )}
             </div>
 
             <div className="info">
@@ -154,11 +157,11 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
                 {bill.customer.email && <div><strong>邮箱：</strong>{bill.customer.email}</div>}
               </div>
               <div className="date-info">
-                <div><strong>创建时间：</strong>{formatDateTime(bill.createdAt)}</div>
+                <div><strong>创建时间：</strong>{formatDate(bill.createdAt)}</div>
                 {bill.completedAt && (
-                  <div><strong>结账时间：</strong>{formatDateTime(bill.completedAt)}</div>
+                  <div><strong>结账时间：</strong>{formatDate(bill.completedAt)}</div>
                 )}
-                <div><strong>打印时间：</strong>{formatDateTime(new Date())}</div>
+                <div><strong>打印时间：</strong>{formatDate(new Date())}</div>
               </div>
             </div>
 
@@ -196,11 +199,6 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
                 此账单暂无明细项目
               </div>
             )}
-
-            <div className="footer">
-              <div>语音记账系统 - 账单打印</div>
-              <div>此账单由系统自动生成</div>
-            </div>
           </div>
         </div>
 
