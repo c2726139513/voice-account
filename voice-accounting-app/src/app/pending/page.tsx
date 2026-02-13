@@ -194,84 +194,25 @@ const fetchBills = async () => {
                 <div className="flex justify-center items-center h-64">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
                 </div>
-              ) : (
-                <div className="space-y-6">
-                  {bills.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      暂无待结账单
-                    </div>
                   ) : (
-                    bills.map((bill) => (
-                      <BillCard
-                        key={bill.id}
-                        bill={bill}
-                        onConfirm={handleConfirmBill}
-                        onManage={handleManageBill}
-                        onDelete={handleDeleteBill}
-                        onPrint={handlePrintBill}
-                      />
-                    ))
-                  )}
-                </div>
-              )}
-              
-              {totalPages > 1 && (
-                <div className="mt-6 flex justify-center">
-                  <nav className="flex space-x-2">
-                    <button
-                      onClick={() => setCurrentPage(currentPage - 1)}
-                      disabled={currentPage === 1}
-                      className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      上一页
-                    </button>
-                    
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`px-3 py-2 border rounded-md text-sm font-medium ${
-                          currentPage === page
-                            ? 'bg-blue-500 text-white border-blue-500'
-                            : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    ))}
-                    
-                    <button
-                      onClick={() => setCurrentPage(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                      className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      下一页
-                    </button>
-                  </nav>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 账单管理弹窗 */}
-      {managingBill && (
-        <BillManager
-          bill={managingBill}
-          onClose={handleCloseManager}
-          onUpdate={handleCloseManager}
-        />
-      )}
-
-      {/* 打印账单弹窗 */}
-      {printingBill && (
-        <PrintBill
-          bill={printingBill}
-          onClose={handleClosePrint}
-        />
-      )}
-    </div>
-  )
+                    <div className="space-y-6">
+                      {bills.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">
+                          暂无待结账单
+                        </div>
+                      ) : (
+                        bills.map((bill) => (
+                          <BillCard
+                            key={bill.id}
+                            bill={bill}
+                            onConfirm={handleConfirmBill}
+                            onManage={handleManageBill}
+                            onDelete={hasPermission('pending-bill:delete') ? handleDeleteBill : undefined}
+                            onPrint={handlePrintBill}
+                          />
+                        ))
+                      )}
+                    </div>
+                  )
 }
 

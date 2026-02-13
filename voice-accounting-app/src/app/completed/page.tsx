@@ -174,7 +174,7 @@ const fetchBills = async () => {
                       <BillCard
                         key={bill.id}
                         bill={bill}
-                        onRevert={handleRevertBill}
+                        onRevert={hasPermission('completed-bill:revert') ? handleRevertBill : undefined}
                         onPrint={handlePrintBill}
                       />
                     ))

@@ -25,7 +25,8 @@ export default function Navigation({ user, onLogout }: NavigationProps) {
     { href: '/', label: '总账单', active: pathname === '/' },
     { href: '/pending', label: '待结账单', active: pathname === '/pending' },
     { href: '/completed', label: '已结账单', active: pathname === '/completed' },
-    { href: '/admin/settings', label: '系统管理', active: pathname === '/admin/settings', adminOnly: true }
+    { href: '/admin/settings', label: '系统管理', active: pathname === '/admin/settings', adminOnly: true },
+    { href: '/admin/users', label: '用户管理', active: pathname === '/admin/users', adminOnly: true }
   ].filter(item => {
     // 根据权限过滤导航项
     if (item.href === '/' && !hasPermission('invoice:read')) return false
