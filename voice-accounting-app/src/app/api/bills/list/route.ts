@@ -22,9 +22,12 @@ export async function GET(request: NextRequest) {
         where,
         include: {
           customer: true,
-          _count: {
-            select: {
-              invoices: true
+          invoices: {
+            include: {
+              customer: true
+            },
+            orderBy: {
+              workDate: 'asc'
             }
           }
         },
