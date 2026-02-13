@@ -3,19 +3,16 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // 从URL获取ID，因为动态路由可能有问题
-    const url = new URL(request.url);
-    const customerId = url.pathname.split('/').pop();
-    console.log('Checking invoices for customer:', customerId);
-    console.log('Full params object:', JSON.stringify(params));
+    const { id } = await params;
+    console.log('Checking invoices for customer:', id);
 
     // 检查客户是否有账单
     const invoiceCount = await prisma.invoice.count({
       where: {
-        customerId: customerId
+        customerId: id
       }
     });
 

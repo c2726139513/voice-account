@@ -3,17 +3,15 @@ import { prisma } from '@/lib/prisma';
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // 从URL获取ID，因为动态路由可能有问题
-    const url = new URL(request.url);
-    const customerId = url.pathname.split('/').pop();
-    
+    const { id } = await params;
+
     // 先检查客户是否有账单
     const invoices = await prisma.invoice.findMany({
       where: {
-        customerId: customerId
+        customerId: id
       },
       select: { id: true }
     });
@@ -28,7 +26,7 @@ export async function DELETE(
     // 删除客户
     await prisma.customer.delete({
       where: {
-        id: customerId
+        id
       }
     });
 
