@@ -12,7 +12,21 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    return NextResponse.json({ company })
+    const token = request.cookies.get('token')?.value
+    const isAuthenticated = token && verifyToken(token)
+
+    if (isAuthenticated) {
+      return NextResponse.json({ company })
+    } else {
+      return NextResponse.json({
+        company: {
+          id: company.id,
+          name: company.name,
+          contactPerson: null,
+          contactPhone: null
+        }
+      })
+    }
   } catch (error) {
     console.error('获取公司信息时出错:', error)
     return NextResponse.json({ error: '服务器内部错误' }, { status: 500 })
