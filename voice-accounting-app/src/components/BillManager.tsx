@@ -156,6 +156,7 @@ export default function BillManager({ bill, onClose, onUpdate }: BillManagerProp
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
+          customerId: editingInvoice.customerId,
           description: editForm.description,
           quantity: parseFloat(editForm.quantity),
           unitPrice: parseFloat(editForm.unitPrice),
