@@ -45,7 +45,14 @@ export default function UserForm({ user, onSave, onCancel, loading }: UserFormPr
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    const permissionList: string[] = []
+    // 所有用户默认拥有基础查看权限
+    const permissionList: string[] = [
+      'invoice:read',
+      'bill:read',
+      'customer:read'
+    ]
+
+    // 添加额外权限
     if (permissions.billDelete) permissionList.push('bill:delete')
     if (permissions.pendingBillDelete) permissionList.push('pending-bill:delete')
     if (permissions.pendingBillRevert) permissionList.push('pending-bill:revert')
