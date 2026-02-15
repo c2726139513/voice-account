@@ -135,10 +135,10 @@ export default function ManualInvoiceForm({ customers, onSubmit, onCancel, onCus
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <h2 className="text-xl font-bold text-gray-900 mb-4">手动录入账单</h2>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="workDate" className="block text-sm font-medium text-gray-700 mb-1">
@@ -150,7 +150,7 @@ export default function ManualInvoiceForm({ customers, onSubmit, onCancel, onCus
               name="workDate"
               value={formData.workDate}
               onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px] ${
                 errors.workDate ? 'border-red-500' : 'border-gray-300'
               }`}
             />
@@ -207,7 +207,7 @@ export default function ManualInvoiceForm({ customers, onSubmit, onCancel, onCus
                 onBlur={calculateTotal}
                 step="0.01"
                 min="0"
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px] ${
                   errors.quantity ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="0"
@@ -230,7 +230,7 @@ export default function ManualInvoiceForm({ customers, onSubmit, onCancel, onCus
                 onBlur={calculateTotal}
                 step="0.01"
                 min="0"
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px] ${
                   errors.unitPrice ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="0.00"
@@ -253,24 +253,24 @@ export default function ManualInvoiceForm({ customers, onSubmit, onCancel, onCus
               readOnly
               step="0.01"
               min="0"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 min-h-[44px]"
               placeholder="0.00"
             />
             <p className="mt-1 text-xs text-gray-500">自动计算：单价 × 数量</p>
           </div>
 
-          <div className="flex justify-end space-x-3 pt-4">
+          <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 pt-4">
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+              className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors min-h-[44px]"
             >
               取消
             </button>
             <button
               type="submit"
               disabled={creatingCustomer}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
             >
               {creatingCustomer ? '创建中...' : '创建账单'}
             </button>

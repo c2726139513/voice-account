@@ -223,7 +223,7 @@ export default function VoiceInput({ onTranscript }: VoiceInputProps) {
     <div className="relative">
       <button
         onClick={isRecording ? stopRecording : startRecording}
-        className={`px-4 py-2 rounded-md font-medium transition-all flex items-center space-x-2 ${
+        className={`px-3 sm:px-4 py-2 rounded-md font-medium transition-all flex items-center space-x-2 min-h-[44px] ${
           isRecording
             ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse'
             : 'bg-blue-500 hover:bg-blue-600 text-white'
@@ -232,33 +232,30 @@ export default function VoiceInput({ onTranscript }: VoiceInputProps) {
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
         </svg>
-        <span>{isRecording ? '停止录音' : '语音输入'}</span>
+        <span className="hidden sm:inline">{isRecording ? '停止录音' : '语音输入'}</span>
+        <span className="sm:hidden">{isRecording ? '停止' : '语音'}</span>
       </button>
-      
-      {/* 录音状态指示器 */}
+
       {isRecording && (
         <div className="absolute -top-2 -right-2">
           <div className="w-4 h-4 bg-red-500 rounded-full animate-ping"></div>
           <div className="w-4 h-4 bg-red-500 rounded-full animate-ping animation-delay-200"></div>
         </div>
       )}
-      
-      {/* 悬浮面板 */}
+
       {showFloatingPanel && (
-        <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-50">
-          <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 min-w-[300px]">
-            {/* 三角形指示器 */}
+        <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-50 w-[calc(100vw-2rem)] sm:w-auto max-w-sm">
+          <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4">
             <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-white border-l border-t border-gray-200 transform rotate-45"></div>
-            
+
             {isRecording && (
               <div className="flex items-center space-x-2 mb-3">
                 <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
                 <span className="text-gray-600 text-sm">正在录音...</span>
-                <span className="text-xs text-gray-500">(3秒无声音自动停止)</span>
+                <span className="text-xs text-gray-500 hidden sm:inline">(3秒无声音自动停止)</span>
               </div>
             )}
-            
-            {/* 显示识别内容 */}
+
             {(finalTranscript || interimTranscript) && (
               <div className="mb-3">
                 <div className="text-sm text-gray-600 mb-2">识别内容：</div>
@@ -275,20 +272,19 @@ export default function VoiceInput({ onTranscript }: VoiceInputProps) {
                 </div>
               </div>
             )}
-            
-            {/* 操作按钮 */}
-            <div className="flex justify-end space-x-2">
+
+            <div className="flex flex-wrap justify-end gap-2">
               {(finalTranscript || interimTranscript) && (
                 <>
                   <button
                     onClick={submitTranscript}
-                    className="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors text-sm"
+                    className="px-3 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors text-sm min-h-[44px]"
                   >
                     使用此内容
                   </button>
                   <button
                     onClick={clearTranscript}
-                    className="px-3 py-1 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors text-sm"
+                    className="px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors text-sm min-h-[44px]"
                   >
                     清除
                   </button>
@@ -297,14 +293,13 @@ export default function VoiceInput({ onTranscript }: VoiceInputProps) {
               {isRecording && (
                 <button
                   onClick={stopRecording}
-                  className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors text-sm"
+                  className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors text-sm min-h-[44px]"
                 >
                   停止录音
                 </button>
               )}
             </div>
-            
-            {/* 错误信息 */}
+
             {errorMessage && (
               <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded-md">
                 <div className="text-sm text-red-600">{errorMessage}</div>

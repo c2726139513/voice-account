@@ -365,37 +365,38 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-16 sm:pb-0">
       <Navigation user={user} onLogout={logout} />
-      
-      <div className="py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+      <div className="py-4 sm:py-8">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
           <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex justify-between items-center">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-3 sm:space-y-0">
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900">总账单</h1>
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900">总账单</h1>
                   <p className="mt-1 text-sm text-gray-600">
                     使用语音输入或手动录入记录账单信息
                   </p>
                 </div>
-                <div className="flex space-x-2">
+                <div className="flex space-x-2 w-full sm:w-auto">
                   <VoiceInput onTranscript={handleVoiceTranscript} />
                   <button
                     onClick={() => setShowManualForm(true)}
-                    className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors flex items-center space-x-2"
+                    className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors flex items-center justify-center space-x-2 min-h-[44px]"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
-                    <span>手动录入</span>
+                    <span className="hidden sm:inline">手动录入</span>
+                    <span className="sm:hidden">录入</span>
                   </button>
                 </div>
               </div>
             </div>
-            
-            <div className="p-6">
-              <div className="mb-6">
+
+            <div className="p-3 sm:p-6">
+              <div className="mb-4 sm:mb-6">
                 <FilterBar
                   customers={customers}
                   filters={filters}
@@ -418,8 +419,7 @@ export default function Home() {
           </div>
         </div>
       </div>
-      
-      {/* 手动录入表单弹窗 */}
+
       {showManualForm && (
         <ManualInvoiceForm
           customers={customers}

@@ -123,23 +123,23 @@ const fetchBills = async () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-16 sm:pb-0">
       <Navigation user={user} onLogout={logout} />
-      
-      <div className="py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+      <div className="py-4 sm:py-8">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
           <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex justify-between items-center">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-3 sm:space-y-0">
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900">已结账单</h1>
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900">已结账单</h1>
                   <p className="mt-1 text-sm text-gray-600">
                     查看已确认结账的账单表单记录
                   </p>
                 </div>
-                <div className="text-right">
+                <div className="text-right w-full sm:w-auto">
                   <p className="text-sm text-gray-500">总计金额</p>
-                  <p className="text-2xl font-bold text-green-600">
+                  <p className="text-xl sm:text-2xl font-bold text-green-600">
                     ¥{calculateTotal().toFixed(2)}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
@@ -148,9 +148,9 @@ const fetchBills = async () => {
                 </div>
               </div>
             </div>
-            
-            <div className="p-6">
-              <div className="mb-6">
+
+            <div className="p-3 sm:p-6">
+              <div className="mb-4 sm:mb-6">
                 <FilterBar
                   customers={customers}
                   filters={filters}
@@ -158,13 +158,13 @@ const fetchBills = async () => {
                   onCustomerDeleted={handleCustomerDeleted}
                 />
               </div>
-              
+
               {loading ? (
                 <div className="flex justify-center items-center h-64">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
                 </div>
               ) : (
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6">
                   {bills.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
                       暂无已结账单
@@ -181,23 +181,23 @@ const fetchBills = async () => {
                   )}
                 </div>
               )}
-              
+
               {totalPages > 1 && (
-                <div className="mt-6 flex justify-center">
-                  <nav className="flex space-x-2">
+                <div className="mt-4 sm:mt-6 flex justify-center">
+                  <nav className="flex space-x-1 sm:space-x-2">
                     <button
                       onClick={() => setCurrentPage(currentPage - 1)}
                       disabled={currentPage === 1}
-                      className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] min-w-[44px]"
                     >
                       上一页
                     </button>
-                    
+
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        className={`px-3 py-2 border rounded-md text-sm font-medium ${
+                        className={`px-3 py-2 border rounded-md text-sm font-medium min-h-[44px] min-w-[44px] ${
                           currentPage === page
                             ? 'bg-blue-500 text-white border-blue-500'
                             : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
@@ -206,11 +206,11 @@ const fetchBills = async () => {
                         {page}
                       </button>
                     ))}
-                    
+
                     <button
                       onClick={() => setCurrentPage(currentPage + 1)}
                       disabled={currentPage === totalPages}
-                      className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] min-w-[44px]"
                     >
                       下一页
                     </button>
@@ -222,7 +222,6 @@ const fetchBills = async () => {
         </div>
       </div>
 
-      {/* 打印账单弹窗 */}
       {printingBill && (
         <PrintBill
           bill={printingBill}
