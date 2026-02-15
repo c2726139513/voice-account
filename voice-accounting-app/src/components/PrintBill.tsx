@@ -30,6 +30,16 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
     const printContent = document.getElementById('print-content')
     if (!printContent) return
 
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+
+    if (isMobile) {
+      handleMobilePrint(printContent.innerHTML)
+    } else {
+      handleDesktopPrint(printContent.innerHTML)
+    }
+  }
+
+  const handleDesktopPrint = (content: string) => {
     const printWindow = window.open('', '_blank')
     if (!printWindow) {
       alert('无法打开打印窗口，请检查浏览器设置')
@@ -102,7 +112,7 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
           </style>
         </head>
         <body>
-          ${printContent.innerHTML}
+          ${content}
           <script>
             window.onload = function() {
               window.print();
@@ -113,6 +123,105 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
       </html>
     `)
     printWindow.document.close()
+  }
+
+  const handleMobilePrint = (content: string) => {
+    const printContainer = document.createElement('div')
+    printContainer.innerHTML = content
+    printContainer.id = 'mobile-print-container'
+    printContainer.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: white;
+      z-index: 9999;
+      padding: 20px;
+      overflow-y: auto;
+    `
+
+    const printStyles = document.createElement('style')
+    printStyles.textContent = `
+      #mobile-print-container {
+        font-family: 'Microsoft YaHei', Arial, sans-serif;
+        line-height: 1.6;
+      }
+      #mobile-print-container .header {
+        text-align: center;
+        margin-bottom: 30px;
+        border-bottom: 2px solid #333;
+        padding-bottom: 20px;
+      }
+      #mobile-print-container .title {
+        font-size: 20px;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+      #mobile-print-container .subtitle {
+        font-size: 14px;
+        color: #666;
+      }
+      #mobile-print-container .info {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      #mobile-print-container .customer-info,
+      #mobile-print-container .date-info {
+        font-size: 14px;
+      }
+      #mobile-print-container .invoice-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+        font-size: 12px;
+      }
+      #mobile-print-container .invoice-table th,
+      #mobile-print-container .invoice-table td {
+        border: 1px solid #ddd;
+        padding: 8px 4px;
+        text-align: left;
+      }
+      #mobile-print-container .invoice-table th {
+        background-color: #f5f5f5;
+        font-weight: bold;
+      }
+      #mobile-print-container .invoice-table .text-right {
+        text-align: right;
+      }
+      #mobile-print-container .total-section {
+        text-align: right;
+        margin-top: 20px;
+        font-size: 16px;
+        font-weight: bold;
+      }
+      @media print {
+        body > *:not(#mobile-print-container) {
+          display: none !important;
+        }
+        #mobile-print-container {
+          position: static;
+          padding: 10px;
+        }
+      }
+    `
+
+    document.head.appendChild(printStyles)
+    document.body.appendChild(printContainer)
+
+    setTimeout(() => {
+      window.print()
+      
+      const cleanup = () => {
+        document.head.removeChild(printStyles)
+        document.body.removeChild(printContainer)
+      }
+
+      window.addEventListener('afterprint', cleanup, { once: true })
+      setTimeout(cleanup, 1000)
+    }, 100)
   }
 
   return (
