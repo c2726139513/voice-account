@@ -74,6 +74,59 @@ export default function InvoiceList({
     })
   }
 
+  const InvoiceCard = ({ invoice }: { invoice: InvoiceWithCustomer }) => (
+    <div className="bg-white border border-gray-200 rounded-lg p-4 mb-3 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-start space-x-3 flex-1">
+          <input
+            type="checkbox"
+            checked={selectedInvoices.includes(invoice.id)}
+            onChange={() => handleSelectInvoice(invoice.id)}
+            className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <div className="flex-1">
+            <div className="flex items-center space-x-2 mb-1">
+              <span className="text-sm font-medium text-gray-900">
+                {invoice.customer.name}
+              </span>
+              <span className="text-xs text-gray-500">
+                {formatDate(invoice.workDate)}
+              </span>
+            </div>
+            <p className="text-sm text-gray-600 mb-2">
+              {invoice.description}
+            </p>
+            <div className="flex items-center space-x-4 text-xs text-gray-500">
+              <span>数量: {invoice.quantity}</span>
+              <span>单价: ¥{invoice.unitPrice?.toFixed(2) || '0.00'}</span>
+            </div>
+          </div>
+        </div>
+        <div className="text-right ml-3">
+          <p className="text-lg font-bold text-blue-600">
+            ¥{invoice.totalPrice?.toFixed(2) || '0.00'}
+          </p>
+        </div>
+      </div>
+      <div className="flex justify-end space-x-2 pt-2 border-t border-gray-100">
+        <button
+          onClick={() => handleEditInvoice(invoice)}
+          className="px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+        >
+          编辑
+        </button>
+        {onDeleteInvoice && (
+          <button
+            onClick={() => handleDeleteInvoice(invoice.id)}
+            className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors"
+          >
+            删除
+          </button>
+        )}
+      </div>
+    </div>
+  )
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -85,20 +138,20 @@ export default function InvoiceList({
   return (
     <div>
       {selectedInvoices.length > 0 && (
-        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex justify-between items-center">
-          <span className="text-blue-700">
+        <div className="mb-4 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
+          <span className="text-blue-700 text-sm sm:text-base">
             已选择 {selectedInvoices.length} 条账单
           </span>
           <button
             onClick={handlePrepareBill}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+            className="w-full sm:w-auto px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm sm:text-base min-h-[44px]"
           >
             准备结账
           </button>
         </div>
       )}
-      
-      <div className="overflow-x-auto">
+
+      <div className="overflow-x-auto hidden sm:block">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -182,30 +235,40 @@ export default function InvoiceList({
             ))}
           </tbody>
         </table>
-        
+
         {invoices.length === 0 && (
           <div className="text-center py-8 text-gray-500">
             暂无账单记录
           </div>
         )}
       </div>
-      
+
+      <div className="sm:hidden">
+        {invoices.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            暂无账单记录
+          </div>
+        ) : (
+          invoices.map((invoice) => <InvoiceCard key={invoice.id} invoice={invoice} />)
+        )}
+      </div>
+
       {totalPages > 1 && (
         <div className="mt-4 flex justify-center">
-          <nav className="flex space-x-2">
+          <nav className="flex space-x-1 sm:space-x-2">
             <button
               onClick={() => onPageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] min-w-[44px]"
             >
               上一页
             </button>
-            
+
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
               <button
                 key={page}
                 onClick={() => onPageChange(page)}
-                className={`px-3 py-2 border rounded-md text-sm font-medium ${
+                className={`px-3 py-2 border rounded-md text-sm font-medium min-h-[44px] min-w-[44px] ${
                   currentPage === page
                     ? 'bg-blue-500 text-white border-blue-500'
                     : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
@@ -214,11 +277,11 @@ export default function InvoiceList({
                 {page}
               </button>
             ))}
-            
+
             <button
               onClick={() => onPageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] min-w-[44px]"
             >
               下一页
             </button>

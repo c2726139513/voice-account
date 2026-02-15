@@ -21,6 +21,7 @@ interface FilterBarProps {
 export default function FilterBar({ customers, filters, onFilterChange, onCustomerDeleted }: FilterBarProps) {
   const [showDropdown, setShowDropdown] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [showMobileFilters, setShowMobileFilters] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   const handleCustomerChange = (customerId: string) => {
@@ -133,8 +134,25 @@ export default function FilterBar({ customers, filters, onFilterChange, onCustom
   const selectedCustomer = customers.find(c => c.id === filters.customerId)
 
   return (
-    <div className="bg-gray-50 p-4 rounded-lg">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
+      <div className="sm:hidden mb-3">
+        <button
+          onClick={() => setShowMobileFilters(!showMobileFilters)}
+          className="w-full px-4 py-2 bg-white border border-gray-300 rounded-md flex items-center justify-between text-gray-700 hover:bg-gray-50 min-h-[44px]"
+        >
+          <span className="font-medium">筛选条件</span>
+          <svg
+            className={`w-5 h-5 transition-transform ${showMobileFilters ? 'rotate-180' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      </div>
+
+      <div className={`grid grid-cols-1 md:grid-cols-4 gap-3 sm:gap-4 ${showMobileFilters ? 'block' : 'hidden md:grid'}`}>
         <div>
           <label htmlFor="customer" className="block text-sm font-medium text-gray-700 mb-1">
             客户
@@ -142,7 +160,7 @@ export default function FilterBar({ customers, filters, onFilterChange, onCustom
           <div className="relative" ref={dropdownRef}>
             <div
               onClick={() => setShowDropdown(!showDropdown)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer bg-white flex justify-between items-center"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer bg-white flex justify-between items-center min-h-[44px]"
             >
               <span className={selectedCustomer ? 'text-gray-900' : 'text-gray-500'}>
                 {selectedCustomer ? selectedCustomer.name : '所有客户'}
@@ -151,7 +169,7 @@ export default function FilterBar({ customers, filters, onFilterChange, onCustom
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </div>
-            
+
             {showDropdown && (
               <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                 <div
@@ -192,7 +210,7 @@ export default function FilterBar({ customers, filters, onFilterChange, onCustom
             )}
           </div>
         </div>
-        
+
         <div>
           <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
             开始日期
@@ -202,10 +220,10 @@ export default function FilterBar({ customers, filters, onFilterChange, onCustom
             id="startDate"
             value={filters.startDate}
             onChange={handleStartDateChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px]"
           />
         </div>
-        
+
         <div>
           <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
             结束日期
@@ -215,14 +233,14 @@ export default function FilterBar({ customers, filters, onFilterChange, onCustom
             id="endDate"
             value={filters.endDate}
             onChange={handleEndDateChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px]"
           />
         </div>
-        
+
         <div className="flex items-end">
           <button
             onClick={handleClearFilters}
-            className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+            className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors min-h-[44px]"
           >
             清除筛选
           </button>
