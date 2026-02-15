@@ -75,13 +75,21 @@ export default function InvoiceList({
   }
 
   const InvoiceCard = ({ invoice }: { invoice: InvoiceWithCustomer }) => (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 mb-3 shadow-sm hover:shadow-md transition-shadow">
+    <div
+      className={`bg-white border rounded-lg p-4 mb-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer ${
+        selectedInvoices.includes(invoice.id) ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+      }`}
+      onClick={() => handleSelectInvoice(invoice.id)}
+    >
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-start space-x-3 flex-1">
           <input
             type="checkbox"
             checked={selectedInvoices.includes(invoice.id)}
-            onChange={() => handleSelectInvoice(invoice.id)}
+            onChange={(e) => {
+              e.stopPropagation()
+              handleSelectInvoice(invoice.id)
+            }}
             className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
           />
           <div className="flex-1">
@@ -110,14 +118,20 @@ export default function InvoiceList({
       </div>
       <div className="flex justify-end space-x-2 pt-2 border-t border-gray-100">
         <button
-          onClick={() => handleEditInvoice(invoice)}
+          onClick={(e) => {
+            e.stopPropagation()
+            handleEditInvoice(invoice)
+          }}
           className="px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
         >
           编辑
         </button>
         {onDeleteInvoice && (
           <button
-            onClick={() => handleDeleteInvoice(invoice.id)}
+            onClick={(e) => {
+              e.stopPropagation()
+              handleDeleteInvoice(invoice.id)
+            }}
             className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors"
           >
             删除
@@ -244,6 +258,22 @@ export default function InvoiceList({
       </div>
 
       <div className="sm:hidden">
+        {invoices.length > 0 && (
+          <div className="mb-3 flex items-center justify-between px-1">
+            <label className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={selectedInvoices.length === invoices.length && invoices.length > 0}
+                onChange={handleSelectAll}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-700">全选</span>
+            </label>
+            <span className="text-xs text-gray-500">
+              已选 {selectedInvoices.length} / {invoices.length}
+            </span>
+          </div>
+        )}
         {invoices.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             暂无账单记录
