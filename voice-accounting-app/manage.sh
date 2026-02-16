@@ -2,7 +2,7 @@
 
 # 语音记账应用管理脚本
 
-PROJECT_DIR="/root/jizhang/voice-accounting-app"
+PROJECT_DIR="/root/voice-account/voice-accounting-app"
 PID_FILE="$PROJECT_DIR/server.pid"
 LOG_FILE="$PROJECT_DIR/server.log"
 
