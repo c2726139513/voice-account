@@ -126,102 +126,176 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
   }
 
   const handleMobilePrint = (content: string) => {
-    const printContainer = document.createElement('div')
-    printContainer.innerHTML = content
-    printContainer.id = 'mobile-print-container'
-    printContainer.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: white;
-      z-index: 9999;
-      padding: 20px;
-      overflow-y: auto;
-    `
-
-    const printStyles = document.createElement('style')
-    printStyles.textContent = `
-      #mobile-print-container {
-        font-family: 'Microsoft YaHei', Arial, sans-serif;
-        line-height: 1.6;
-      }
-      #mobile-print-container .header {
-        text-align: center;
-        margin-bottom: 30px;
-        border-bottom: 2px solid #333;
-        padding-bottom: 20px;
-      }
-      #mobile-print-container .title {
-        font-size: 20px;
-        font-weight: bold;
-        margin-bottom: 10px;
-      }
-      #mobile-print-container .subtitle {
-        font-size: 14px;
-        color: #666;
-      }
-      #mobile-print-container .info {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        margin-bottom: 20px;
-      }
-      #mobile-print-container .customer-info,
-      #mobile-print-container .date-info {
-        font-size: 14px;
-      }
-      #mobile-print-container .invoice-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-bottom: 20px;
-        font-size: 12px;
-      }
-      #mobile-print-container .invoice-table th,
-      #mobile-print-container .invoice-table td {
-        border: 1px solid #ddd;
-        padding: 8px 4px;
-        text-align: left;
-      }
-      #mobile-print-container .invoice-table th {
-        background-color: #f5f5f5;
-        font-weight: bold;
-      }
-      #mobile-print-container .invoice-table .text-right {
-        text-align: right;
-      }
-      #mobile-print-container .total-section {
-        text-align: right;
-        margin-top: 20px;
-        font-size: 16px;
-        font-weight: bold;
-      }
-      @media print {
-        body > *:not(#mobile-print-container) {
-          display: none !important;
-        }
-        #mobile-print-container {
-          position: static;
-          padding: 10px;
-        }
-      }
-    `
-
-    document.head.appendChild(printStyles)
-    document.body.appendChild(printContainer)
+    onClose()
 
     setTimeout(() => {
-      window.print()
-      
-      const cleanup = () => {
-        document.head.removeChild(printStyles)
-        document.body.removeChild(printContainer)
-      }
+      const printContainer = document.createElement('div')
+      printContainer.innerHTML = content
+      printContainer.id = 'mobile-print-container'
+      printContainer.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: white;
+        z-index: 99999;
+        padding: 20px;
+        overflow-y: auto;
+        box-sizing: border-box;
+      `
 
-      window.addEventListener('afterprint', cleanup, { once: true })
-      setTimeout(cleanup, 1000)
-    }, 100)
+      const printStyles = document.createElement('style')
+      printStyles.id = 'mobile-print-styles'
+      printStyles.textContent = `
+        @media print {
+          body > *:not(#mobile-print-container) {
+            display: none !important;
+          }
+          #mobile-print-container {
+            display: block !important;
+            position: static !important;
+            width: 100% !important;
+            height: auto !important;
+            padding: 10px !important;
+            margin: 0 !important;
+            overflow: visible !important;
+            z-index: auto !important;
+            background: white !important;
+          }
+          #mobile-print-container .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+          }
+          #mobile-print-container .title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+          }
+          #mobile-print-container .subtitle {
+            font-size: 14px;
+            color: #666;
+          }
+          #mobile-print-container .info {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+          }
+          #mobile-print-container .customer-info,
+          #mobile-print-container .date-info {
+            font-size: 14px;
+          }
+          #mobile-print-container .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 12px;
+          }
+          #mobile-print-container .invoice-table th,
+          #mobile-print-container .invoice-table td {
+            border: 1px solid #ddd;
+            padding: 8px 4px;
+            text-align: left;
+          }
+          #mobile-print-container .invoice-table th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+          }
+          #mobile-print-container .invoice-table .text-right {
+            text-align: right;
+          }
+          #mobile-print-container .total-section {
+            text-align: right;
+            margin-top: 20px;
+            font-size: 16px;
+            font-weight: bold;
+          }
+        }
+        #mobile-print-container {
+          font-family: 'Microsoft YaHei', Arial, sans-serif;
+          line-height: 1.6;
+        }
+        #mobile-print-container .header {
+          text-align: center;
+          margin-bottom: 30px;
+          border-bottom: 2px solid #333;
+          padding-bottom: 20px;
+        }
+        #mobile-print-container .title {
+          font-size: 20px;
+          font-weight: bold;
+          margin-bottom: 10px;
+        }
+        #mobile-print-container .subtitle {
+          font-size: 14px;
+          color: #666;
+        }
+        #mobile-print-container .info {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          margin-bottom: 20px;
+        }
+        #mobile-print-container .customer-info,
+        #mobile-print-container .date-info {
+          font-size: 14px;
+        }
+        #mobile-print-container .invoice-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 20px;
+          font-size: 12px;
+        }
+        #mobile-print-container .invoice-table th,
+        #mobile-print-container .invoice-table td {
+          border: 1px solid #ddd;
+          padding: 8px 4px;
+          text-align: left;
+        }
+        #mobile-print-container .invoice-table th {
+          background-color: #f5f5f5;
+          font-weight: bold;
+        }
+        #mobile-print-container .invoice-table .text-right {
+          text-align: right;
+        }
+        #mobile-print-container .total-section {
+          text-align: right;
+          margin-top: 20px;
+          font-size: 16px;
+          font-weight: bold;
+        }
+      `
+
+      document.head.appendChild(printStyles)
+      document.body.appendChild(printContainer)
+
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          window.print()
+
+          const cleanup = () => {
+            const styles = document.getElementById('mobile-print-styles')
+            const container = document.getElementById('mobile-print-container')
+            if (styles && styles.parentNode) {
+              styles.parentNode.removeChild(styles)
+            }
+            if (container && container.parentNode) {
+              container.parentNode.removeChild(container)
+            }
+          }
+
+          window.addEventListener('afterprint', cleanup, { once: true })
+          
+          setTimeout(() => {
+            cleanup()
+          }, 2000)
+        }, 300)
+      })
+    }, 300)
   }
 
   return (
