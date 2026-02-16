@@ -2,6 +2,7 @@
 
 import { Bill, Customer, Invoice } from '@prisma/client'
 import { useCompany } from '@/contexts/CompanyContext'
+import { useState, useEffect } from 'react'
 
 type BillWithInvoices = Bill & {
   customer: Customer
@@ -17,6 +18,16 @@ interface PrintBillProps {
 
 export default function PrintBill({ bill, onClose }: PrintBillProps) {
   const { company } = useCompany()
+  const [html2pdf, setHtml2pdf] = useState<any>(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    // 动态导入 html2pdf.js 以避免服务器端渲染问题
+    import('html2pdf.js').then((module) => {
+      setHtml2pdf(module.default)
+    })
+  }, [])
 
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString('zh-CN', {
@@ -26,238 +37,51 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
     })
   }
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     const printContent = document.getElementById('print-content')
-    if (!printContent) return
+    if (!printContent || !html2pdf) return
 
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    try {
+      // 配置 PDF 生成选项
+      const opt = {
+        margin: [10, 10, 10, 10], // 上、右、下、左边距（毫米）
+        filename: `账单-${bill.title}-${formatDate(new Date())}.pdf`,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: {
+          scale: 2, // 提高清晰度
+          useCORS: true,
+          logging: false,
+          letterRendering: true
+        },
+        jsPDF: {
+          unit: 'mm' as const,
+          format: 'a4' as const,
+          orientation: 'portrait' as const
+        },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      }
 
-    if (isMobile) {
-      handleMobilePrint(printContent.innerHTML)
-    } else {
-      handleDesktopPrint(printContent.innerHTML)
+      // 生成 PDF
+      await html2pdf().set(opt).from(printContent).save()
+
+      // 关闭弹窗
+      onClose()
+    } catch (error) {
+      console.error('生成 PDF 失败:', error)
+      alert('生成 PDF 失败，请重试')
     }
   }
 
-  const handleDesktopPrint = (content: string) => {
-    const printWindow = window.open('', '_blank')
-    if (!printWindow) {
-      alert('无法打开打印窗口，请检查浏览器设置')
-      return
-    }
-
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>账单打印 - ${bill.title}</title>
-          <style>
-            body {
-              font-family: 'Microsoft YaHei', Arial, sans-serif;
-              margin: 0;
-              padding: 20px;
-              line-height: 1.6;
-            }
-            .header {
-              text-align: center;
-              margin-bottom: 30px;
-              border-bottom: 2px solid #333;
-              padding-bottom: 20px;
-            }
-            .title {
-              font-size: 24px;
-              font-weight: bold;
-              margin-bottom: 10px;
-            }
-            .subtitle {
-              font-size: 16px;
-              color: #666;
-            }
-            .info {
-              display: flex;
-              justify-content: space-between;
-              margin-bottom: 20px;
-            }
-            .customer-info, .date-info {
-              font-size: 14px;
-            }
-            .invoice-table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-bottom: 20px;
-            }
-            .invoice-table th,
-            .invoice-table td {
-              border: 1px solid #ddd;
-              padding: 12px;
-              text-align: left;
-            }
-            .invoice-table th {
-              background-color: #f5f5f5;
-              font-weight: bold;
-            }
-            .invoice-table .text-right {
-              text-align: right;
-            }
-            .total-section {
-              text-align: right;
-              margin-top: 20px;
-              font-size: 18px;
-              font-weight: bold;
-            }
-            .print-footer {
-              margin-top: 30px;
-              padding-top: 20px;
-              border-top: 1px solid #ddd;
-              font-size: 14px;
-              line-height: 1.6;
-            }
-            .print-footer img {
-              max-width: 100%;
-              height: auto;
-            }
-            .print-footer a {
-              color: #0066cc;
-              text-decoration: none;
-            }
-            .print-footer a:hover {
-              text-decoration: underline;
-            }
-            @media print {
-              body { margin: 0; }
-              .no-print { display: none; }
-            }
-          </style>
-        </head>
-        <body>
-          ${content}
-          <script>
-            window.onload = function() {
-              window.print();
-              window.close();
-            }
-          </script>
-        </body>
-      </html>
-    `)
-    printWindow.document.close()
-  }
-
-  const handleMobilePrint = (content: string) => {
-    onClose()
-
-    const printHtml = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>账单打印 - ${bill.title}</title>
-        <style>
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
-          body {
-            font-family: 'Microsoft YaHei', Arial, sans-serif;
-            padding: 20px;
-            line-height: 1.6;
-            background: white;
-            color: #000;
-          }
-          .header {
-            text-align: center;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #333;
-            padding-bottom: 20px;
-          }
-          .title {
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 10px;
-          }
-          .subtitle {
-            font-size: 14px;
-            color: #666;
-          }
-          .info {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 20px;
-          }
-          .customer-info, .date-info {
-            font-size: 14px;
-          }
-          .invoice-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-            font-size: 12px;
-          }
-          .invoice-table th,
-          .invoice-table td {
-            border: 1px solid #ddd;
-            padding: 8px 4px;
-            text-align: left;
-          }
-          .invoice-table th {
-            background-color: #f5f5f5;
-            font-weight: bold;
-          }
-          .invoice-table .text-right {
-            text-align: right;
-          }
-          .total-section {
-            text-align: right;
-            margin-top: 20px;
-            font-size: 16px;
-            font-weight: bold;
-          }
-          .print-footer {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #ddd;
-            font-size: 12px;
-            line-height: 1.6;
-          }
-          .print-footer img {
-            max-width: 100%;
-            height: auto;
-          }
-          .print-footer a {
-            color: #0066cc;
-            text-decoration: none;
-          }
-        </style>
-      </head>
-      <body>
-        ${content}
-        <script>
-          window.onload = function() {
-            setTimeout(function() {
-              window.print();
-            }, 300);
-          };
-        </script>
-      </body>
-      </html>
-    `
-
-    const blob = new Blob([printHtml], { type: 'text/html' })
-    const url = URL.createObjectURL(blob)
-    const printWindow = window.open(url, '_blank')
-
-    if (!printWindow) {
-      URL.revokeObjectURL(url)
-      alert('无法打开打印窗口，请检查浏览器设置')
-      return
-    }
-
-    setTimeout(() => {
-      URL.revokeObjectURL(url)
-    }, 10000)
+  if (!mounted) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden">
+          <div className="p-6 flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -276,12 +100,12 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
         </div>
 
         <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 200px)' }}>
-          <div id="print-content">
-            <div className="header">
+          <div id="print-content" style={{ width: '210mm', minHeight: '297mm', padding: '20px', margin: '0 auto', background: 'white' }}>
+            <div style={{ textAlign: 'center', marginBottom: '30px', borderBottom: '2px solid #333', paddingBottom: '20px' }}>
               {company?.name ? (
                 <>
-                  <div className="title">{company.name}</div>
-                  <div className="subtitle">
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '10px' }}>{company.name}</div>
+                  <div style={{ fontSize: '16px', color: '#666' }}>
                     {company.contactPerson && `联系人：${company.contactPerson}`}
                     {company.contactPerson && company.contactPhone && '\u00A0\u00A0\u00A0\u00A0\u00A0'}
                     {company.contactPhone && `电话：${company.contactPhone}`}
@@ -289,19 +113,19 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
                 </>
               ) : (
                 <>
-                  <div className="title">账单</div>
-                  <div className="subtitle">{bill.title}</div>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '10px' }}>账单</div>
+                  <div style={{ fontSize: '16px', color: '#666' }}>{bill.title}</div>
                 </>
               )}
             </div>
 
-            <div className="info">
-              <div className="customer-info">
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <div style={{ fontSize: '14px' }}>
                 <div><strong>客户：</strong>{bill.customer.name}</div>
                 {bill.customer.phone && <div><strong>电话：</strong>{bill.customer.phone}</div>}
                 {bill.customer.email && <div><strong>邮箱：</strong>{bill.customer.email}</div>}
               </div>
-              <div className="date-info">
+              <div style={{ fontSize: '14px', textAlign: 'right' }}>
                 <div><strong>创建时间：</strong>{formatDate(bill.createdAt)}</div>
                 {bill.completedAt && (
                   <div><strong>结账时间：</strong>{formatDate(bill.completedAt)}</div>
@@ -312,36 +136,36 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
 
             {bill.invoices.length > 0 ? (
               <>
-                <table className="invoice-table">
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20px', fontSize: '12px' }}>
                   <thead>
                     <tr>
-                      <th>日期</th>
-                      <th>工作描述</th>
-                      <th>数量</th>
-                      <th>单价</th>
-                      <th>金额</th>
+                      <th style={{ border: '1px solid #ddd', padding: '12px', textAlign: 'left', backgroundColor: '#f5f5f5', fontWeight: 'bold' }}>日期</th>
+                      <th style={{ border: '1px solid #ddd', padding: '12px', textAlign: 'left', backgroundColor: '#f5f5f5', fontWeight: 'bold' }}>工作描述</th>
+                      <th style={{ border: '1px solid #ddd', padding: '12px', textAlign: 'left', backgroundColor: '#f5f5f5', fontWeight: 'bold' }}>数量</th>
+                      <th style={{ border: '1px solid #ddd', padding: '12px', textAlign: 'left', backgroundColor: '#f5f5f5', fontWeight: 'bold' }}>单价</th>
+                      <th style={{ border: '1px solid #ddd', padding: '12px', textAlign: 'right', backgroundColor: '#f5f5f5', fontWeight: 'bold' }}>金额</th>
                     </tr>
                   </thead>
                   <tbody>
                     {bill.invoices.map((invoice) => (
                       <tr key={invoice.id}>
-                        <td>{formatDate(invoice.workDate)}</td>
-                        <td>{invoice.description}</td>
-                        <td>{invoice.quantity}</td>
-                        <td>¥{invoice.unitPrice.toFixed(2)}</td>
-                        <td className="text-right">¥{invoice.totalPrice.toFixed(2)}</td>
+                        <td style={{ border: '1px solid #ddd', padding: '12px', textAlign: 'left' }}>{formatDate(invoice.workDate)}</td>
+                        <td style={{ border: '1px solid #ddd', padding: '12px', textAlign: 'left' }}>{invoice.description}</td>
+                        <td style={{ border: '1px solid #ddd', padding: '12px', textAlign: 'left' }}>{invoice.quantity}</td>
+                        <td style={{ border: '1px solid #ddd', padding: '12px', textAlign: 'left' }}>¥{invoice.unitPrice.toFixed(2)}</td>
+                        <td style={{ border: '1px solid #ddd', padding: '12px', textAlign: 'right' }}>¥{invoice.totalPrice.toFixed(2)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
 
-                <div className="total-section">
+                <div style={{ textAlign: 'right', marginTop: '20px', fontSize: '18px', fontWeight: 'bold' }}>
                   <div>总计金额：¥{bill.totalAmount.toFixed(2)}</div>
                 </div>
 
                 {company?.printFooter && (
                   <div
-                    className="print-footer"
+                    style={{ marginTop: '30px', paddingTop: '20px', borderTop: '1px solid #ddd', fontSize: '14px', lineHeight: '1.6' }}
                     dangerouslySetInnerHTML={{ __html: company.printFooter }}
                   />
                 )}
@@ -354,7 +178,7 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
           </div>
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3 no-print">
+        <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
           <button
             onClick={onClose}
             className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
@@ -365,7 +189,7 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
             onClick={handlePrint}
             className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
           >
-            打印账单
+            生成 PDF 并打印
           </button>
         </div>
       </div>
