@@ -7,7 +7,8 @@
     "dev:https": "node server.js",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "preinstall": "npm install --legacy-peer-deps || exit 0"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.3.0",
