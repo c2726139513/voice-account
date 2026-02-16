@@ -126,27 +126,9 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
   }
 
   const handleMobilePrint = (content: string) => {
-    const printFrame = document.createElement('iframe')
-    printFrame.style.cssText = `
-      position: fixed;
-      top: -9999px;
-      left: -9999px;
-      width: 1px;
-      height: 1px;
-      opacity: 0;
-      pointer-events: none;
-    `
-    printFrame.id = 'mobile-print-frame'
-    document.body.appendChild(printFrame)
+    onClose()
 
-    const frameDoc = printFrame.contentWindow?.document
-    if (!frameDoc) {
-      document.body.removeChild(printFrame)
-      return
-    }
-
-    frameDoc.open()
-    frameDoc.write(`
+    const printHtml = `
       <!DOCTYPE html>
       <html>
       <head>
@@ -164,6 +146,7 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
             padding: 20px;
             line-height: 1.6;
             background: white;
+            color: #000;
           }
           .header {
             text-align: center;
@@ -214,12 +197,6 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
             font-size: 16px;
             font-weight: bold;
           }
-          @media print {
-            body {
-              padding: 10px;
-              margin: 0;
-            }
-          }
         </style>
       </head>
       <body>
@@ -228,25 +205,26 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
           window.onload = function() {
             setTimeout(function() {
               window.print();
-            }, 200);
+            }, 300);
           };
         </script>
       </body>
       </html>
-    `)
-    frameDoc.close()
+    `
 
-    const cleanup = () => {
-      const frame = document.getElementById('mobile-print-frame')
-      if (frame && frame.parentNode) {
-        frame.parentNode.removeChild(frame)
-      }
+    const blob = new Blob([printHtml], { type: 'text/html' })
+    const url = URL.createObjectURL(blob)
+    const printWindow = window.open(url, '_blank')
+
+    if (!printWindow) {
+      URL.revokeObjectURL(url)
+      alert('无法打开打印窗口，请检查浏览器设置')
+      return
     }
 
-    printFrame.onload = function() {
-      printFrame.contentWindow?.addEventListener('afterprint', cleanup, { once: true })
-      setTimeout(cleanup, 5000)
-    }
+    setTimeout(() => {
+      URL.revokeObjectURL(url)
+    }, 10000)
   }
 
   return (
