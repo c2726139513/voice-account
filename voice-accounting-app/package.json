@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "node scripts/migrate.js"
+    "postinstall": "node scripts/migrate.js",
+    "preinstall": "npm install --legacy-peer-deps || exit 0"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.3.0",
