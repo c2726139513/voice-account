@@ -7,6 +7,7 @@ interface Company {
   name: string | null
   contactPerson: string | null
   contactPhone: string | null
+  printFooter: string | null
 }
 
 interface CompanyContextType {

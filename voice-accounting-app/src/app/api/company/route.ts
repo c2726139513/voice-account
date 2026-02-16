@@ -46,7 +46,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, contactPerson, contactPhone } = body
+    const { name, contactPerson, contactPhone, printFooter } = body
 
     let company = await prisma.company.findFirst()
 
@@ -56,7 +56,8 @@ export async function PUT(request: NextRequest) {
         data: {
           name: name || null,
           contactPerson: contactPerson || null,
-          contactPhone: contactPhone || null
+          contactPhone: contactPhone || null,
+          printFooter: printFooter || null
         }
       })
     } else {
@@ -64,7 +65,8 @@ export async function PUT(request: NextRequest) {
         data: {
           name: name || null,
           contactPerson: contactPerson || null,
-          contactPhone: contactPhone || null
+          contactPhone: contactPhone || null,
+          printFooter: printFooter || null
         }
       })
     }
