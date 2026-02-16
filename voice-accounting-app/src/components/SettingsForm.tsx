@@ -1,17 +1,19 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import RichTextEditor from './RichTextEditor'
 
 interface Company {
   id: string
   name: string | null
   contactPerson: string | null
   contactPhone: string | null
+  printFooter: string | null
 }
 
 interface SettingsFormProps {
   company: Company | null
-  onSave: (data: { name: string; contactPerson: string; contactPhone: string }) => void
+  onSave: (data: { name: string; contactPerson: string; contactPhone: string; printFooter: string }) => void
   loading: boolean
 }
 
@@ -19,12 +21,14 @@ export default function SettingsForm({ company, onSave, loading }: SettingsFormP
   const [name, setName] = useState('')
   const [contactPerson, setContactPerson] = useState('')
   const [contactPhone, setContactPhone] = useState('')
+  const [printFooter, setPrintFooter] = useState('')
 
   useEffect(() => {
     if (company) {
       setName(company.name || '')
       setContactPerson(company.contactPerson || '')
       setContactPhone(company.contactPhone || '')
+      setPrintFooter(company.printFooter || '')
     }
   }, [company])
 
@@ -33,7 +37,8 @@ export default function SettingsForm({ company, onSave, loading }: SettingsFormP
     onSave({
       name: name.trim(),
       contactPerson: contactPerson.trim(),
-      contactPhone: contactPhone.trim()
+      contactPhone: contactPhone.trim(),
+      printFooter
     })
   }
 
@@ -82,6 +87,28 @@ export default function SettingsForm({ company, onSave, loading }: SettingsFormP
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
               placeholder="请输入联系电话"
             />
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">打印设置</h3>
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="printFooter" className="block text-sm font-medium text-gray-700 mb-2">
+              打印可选项
+            </label>
+            <p className="text-sm text-gray-500 mb-2">
+              此内容将在打印账单时显示在账单表格下方。支持文字、图片、链接等富文本格式。
+            </p>
+            <div className="mb-4">
+              <RichTextEditor
+                value={printFooter}
+                onChange={setPrintFooter}
+                placeholder="请输入打印时显示的额外信息，如：注意事项、联系方式、网址等..."
+                height={200}
+              />
+            </div>
           </div>
         </div>
       </div>

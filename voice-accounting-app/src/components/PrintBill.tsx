@@ -105,6 +105,24 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
               font-size: 18px;
               font-weight: bold;
             }
+            .print-footer {
+              margin-top: 30px;
+              padding-top: 20px;
+              border-top: 1px solid #ddd;
+              font-size: 14px;
+              line-height: 1.6;
+            }
+            .print-footer img {
+              max-width: 100%;
+              height: auto;
+            }
+            .print-footer a {
+              color: #0066cc;
+              text-decoration: none;
+            }
+            .print-footer a:hover {
+              text-decoration: underline;
+            }
             @media print {
               body { margin: 0; }
               .no-print { display: none; }
@@ -196,6 +214,21 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
             margin-top: 20px;
             font-size: 16px;
             font-weight: bold;
+          }
+          .print-footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            font-size: 12px;
+            line-height: 1.6;
+          }
+          .print-footer img {
+            max-width: 100%;
+            height: auto;
+          }
+          .print-footer a {
+            color: #0066cc;
+            text-decoration: none;
           }
         </style>
       </head>
@@ -305,6 +338,13 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
                 <div className="total-section">
                   <div>总计金额：¥{bill.totalAmount.toFixed(2)}</div>
                 </div>
+
+                {company?.printFooter && (
+                  <div
+                    className="print-footer"
+                    dangerouslySetInnerHTML={{ __html: company.printFooter }}
+                  />
+                )}
               </>
             ) : (
               <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>

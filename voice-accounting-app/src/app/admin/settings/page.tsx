@@ -11,7 +11,7 @@ export default function SettingsPage() {
   const { company, refreshCompany } = useCompany()
   const [loading, setLoading] = useState(false)
 
-  const handleSave = async (data: { name: string; contactPerson: string; contactPhone: string }) => {
+  const handleSave = async (data: { name: string; contactPerson: string; contactPhone: string; printFooter: string }) => {
     setLoading(true)
     try {
       const response = await fetch('/api/company', {
