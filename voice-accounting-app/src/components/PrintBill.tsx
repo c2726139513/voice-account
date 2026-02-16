@@ -126,176 +126,127 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
   }
 
   const handleMobilePrint = (content: string) => {
-    onClose()
+    const printFrame = document.createElement('iframe')
+    printFrame.style.cssText = `
+      position: fixed;
+      top: -9999px;
+      left: -9999px;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    `
+    printFrame.id = 'mobile-print-frame'
+    document.body.appendChild(printFrame)
 
-    setTimeout(() => {
-      const printContainer = document.createElement('div')
-      printContainer.innerHTML = content
-      printContainer.id = 'mobile-print-container'
-      printContainer.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: white;
-        z-index: 99999;
-        padding: 20px;
-        overflow-y: auto;
-        box-sizing: border-box;
-      `
+    const frameDoc = printFrame.contentWindow?.document
+    if (!frameDoc) {
+      document.body.removeChild(printFrame)
+      return
+    }
 
-      const printStyles = document.createElement('style')
-      printStyles.id = 'mobile-print-styles'
-      printStyles.textContent = `
-        @media print {
-          body > *:not(#mobile-print-container) {
-            display: none !important;
+    frameDoc.open()
+    frameDoc.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>账单打印 - ${bill.title}</title>
+        <style>
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
           }
-          #mobile-print-container {
-            display: block !important;
-            position: static !important;
-            width: 100% !important;
-            height: auto !important;
-            padding: 10px !important;
-            margin: 0 !important;
-            overflow: visible !important;
-            z-index: auto !important;
-            background: white !important;
+          body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            padding: 20px;
+            line-height: 1.6;
+            background: white;
           }
-          #mobile-print-container .header {
+          .header {
             text-align: center;
             margin-bottom: 30px;
             border-bottom: 2px solid #333;
             padding-bottom: 20px;
           }
-          #mobile-print-container .title {
+          .title {
             font-size: 20px;
             font-weight: bold;
             margin-bottom: 10px;
           }
-          #mobile-print-container .subtitle {
+          .subtitle {
             font-size: 14px;
             color: #666;
           }
-          #mobile-print-container .info {
+          .info {
             display: flex;
             flex-direction: column;
             gap: 10px;
             margin-bottom: 20px;
           }
-          #mobile-print-container .customer-info,
-          #mobile-print-container .date-info {
+          .customer-info, .date-info {
             font-size: 14px;
           }
-          #mobile-print-container .invoice-table {
+          .invoice-table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
             font-size: 12px;
           }
-          #mobile-print-container .invoice-table th,
-          #mobile-print-container .invoice-table td {
+          .invoice-table th,
+          .invoice-table td {
             border: 1px solid #ddd;
             padding: 8px 4px;
             text-align: left;
           }
-          #mobile-print-container .invoice-table th {
+          .invoice-table th {
             background-color: #f5f5f5;
             font-weight: bold;
           }
-          #mobile-print-container .invoice-table .text-right {
+          .invoice-table .text-right {
             text-align: right;
           }
-          #mobile-print-container .total-section {
+          .total-section {
             text-align: right;
             margin-top: 20px;
             font-size: 16px;
             font-weight: bold;
           }
-        }
-        #mobile-print-container {
-          font-family: 'Microsoft YaHei', Arial, sans-serif;
-          line-height: 1.6;
-        }
-        #mobile-print-container .header {
-          text-align: center;
-          margin-bottom: 30px;
-          border-bottom: 2px solid #333;
-          padding-bottom: 20px;
-        }
-        #mobile-print-container .title {
-          font-size: 20px;
-          font-weight: bold;
-          margin-bottom: 10px;
-        }
-        #mobile-print-container .subtitle {
-          font-size: 14px;
-          color: #666;
-        }
-        #mobile-print-container .info {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-          margin-bottom: 20px;
-        }
-        #mobile-print-container .customer-info,
-        #mobile-print-container .date-info {
-          font-size: 14px;
-        }
-        #mobile-print-container .invoice-table {
-          width: 100%;
-          border-collapse: collapse;
-          margin-bottom: 20px;
-          font-size: 12px;
-        }
-        #mobile-print-container .invoice-table th,
-        #mobile-print-container .invoice-table td {
-          border: 1px solid #ddd;
-          padding: 8px 4px;
-          text-align: left;
-        }
-        #mobile-print-container .invoice-table th {
-          background-color: #f5f5f5;
-          font-weight: bold;
-        }
-        #mobile-print-container .invoice-table .text-right {
-          text-align: right;
-        }
-        #mobile-print-container .total-section {
-          text-align: right;
-          margin-top: 20px;
-          font-size: 16px;
-          font-weight: bold;
-        }
-      `
-
-      document.head.appendChild(printStyles)
-      document.body.appendChild(printContainer)
-
-      requestAnimationFrame(() => {
-        setTimeout(() => {
-          window.print()
-
-          const cleanup = () => {
-            const styles = document.getElementById('mobile-print-styles')
-            const container = document.getElementById('mobile-print-container')
-            if (styles && styles.parentNode) {
-              styles.parentNode.removeChild(styles)
-            }
-            if (container && container.parentNode) {
-              container.parentNode.removeChild(container)
+          @media print {
+            body {
+              padding: 10px;
+              margin: 0;
             }
           }
+        </style>
+      </head>
+      <body>
+        ${content}
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+            }, 200);
+          };
+        </script>
+      </body>
+      </html>
+    `)
+    frameDoc.close()
 
-          window.addEventListener('afterprint', cleanup, { once: true })
-          
-          setTimeout(() => {
-            cleanup()
-          }, 2000)
-        }, 300)
-      })
-    }, 300)
+    const cleanup = () => {
+      const frame = document.getElementById('mobile-print-frame')
+      if (frame && frame.parentNode) {
+        frame.parentNode.removeChild(frame)
+      }
+    }
+
+    printFrame.onload = function() {
+      printFrame.contentWindow?.addEventListener('afterprint', cleanup, { once: true })
+      setTimeout(cleanup, 5000)
+    }
   }
 
   return (
