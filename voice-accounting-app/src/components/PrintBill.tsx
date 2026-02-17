@@ -94,11 +94,6 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
               height: 100%;
               overflow: hidden;
               display: flex;
-              flex-direction: column;
-            }
-            #pdf-container {
-              flex: 1;
-              display: flex;
               justify-content: center;
               align-items: center;
               background: #f5f5f5;
@@ -108,51 +103,28 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
               max-height: 100%;
               box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             }
-            #toolbar {
-              padding: 10px;
-              background: #fff;
-              border-bottom: 1px solid #ddd;
-              display: flex;
-              justify-content: center;
-              gap: 10px;
-            }
-            button {
-              padding: 8px 16px;
-              background: #007bff;
-              color: white;
-              border: none;
-              border-radius: 4px;
-              cursor: pointer;
-              font-size: 14px;
-            }
-            button:hover {
-              background: #0056b3;
-            }
             #loading {
-              position: absolute;
-              top: 50%;
-              left: 50%;
-              transform: translate(-50%, -50%);
               font-size: 16px;
               color: #666;
+            }
+            @media print {
+              body {
+                background: white;
+              }
+              #loading {
+                display: none;
+              }
             }
           </style>
         </head>
         <body>
           <div id="loading">正在加载 PDF...</div>
-          <div id="toolbar">
-            <button onclick="window.print()">打印</button>
-            <button onclick="window.close()">关闭</button>
-          </div>
-          <div id="pdf-container">
-            <canvas id="pdf-canvas"></canvas>
-          </div>
+          <canvas id="pdf-canvas"></canvas>
           <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
           <script>
             const pdfUrl = '${pdfUrl}';
             const canvas = document.getElementById('pdf-canvas');
             const loading = document.getElementById('loading');
-            const container = document.getElementById('pdf-container');
 
             pdfjsLib = window['pdfjs-dist/build/pdf'];
             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -163,62 +135,52 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
               
               const numPages = pdf.numPages;
               let currentPage = 1;
+              const pages = [];
 
-              function renderPage(pageNumber) {
-                pdf.getPage(pageNumber).then(function(page) {
-                  const viewport = page.getViewport({ scale: 1.5 });
-                  
-                  const context = canvas.getContext('2d');
-                  canvas.height = viewport.height;
-                  canvas.width = viewport.width;
-
-                  const renderContext = {
-                    canvasContext: context,
-                    viewport: viewport
-                  };
-
-                  page.render(renderContext).promise.then(function() {
-                    loading.style.display = 'none';
-                    
-                    if (pageNumber < numPages) {
-                      // 如果有多页，显示导航按钮
-                      if (!document.getElementById('nav-buttons')) {
-                        const navDiv = document.createElement('div');
-                        navDiv.id = 'nav-buttons';
-                        navDiv.style.cssText = 'padding: 10px; text-align: center; background: #fff;';
-                        navDiv.innerHTML = \`
-                          <button onclick="prevPage()">上一页</button>
-                          <span id="page-info">第 \${currentPage} / \${numPages} 页</span>
-                          <button onclick="nextPage()">下一页</button>
-                        \`;
-                        document.body.insertBefore(navDiv, container);
-                      }
-                    }
-                  });
-                });
+              // 预加载所有页面
+              function loadAllPages() {
+                const promises = [];
+                for (let i = 1; i <= numPages; i++) {
+                  promises.push(pdf.getPage(i));
+                }
+                return Promise.all(promises);
               }
 
-              window.prevPage = function() {
-                if (currentPage > 1) {
-                  currentPage--;
-                  document.getElementById('page-info').textContent = '第 ' + currentPage + ' / ' + numPages + ' 页';
-                  renderPage(currentPage);
-                }
-              };
-
-              window.nextPage = function() {
-                if (currentPage < numPages) {
-                  currentPage++;
-                  document.getElementById('page-info').textContent = '第 ' + currentPage + ' / ' + numPages + ' 页';
-                  renderPage(currentPage);
-                }
-              };
-
-              renderPage(currentPage);
+              loadAllPages().then(function(pagePromises) {
+                pages = pagePromises;
+                renderPage(currentPage);
+              });
             }, function(reason) {
               console.error('PDF 加载失败:', reason);
               loading.textContent = 'PDF 加载失败: ' + reason;
             });
+
+            function renderPage(pageNumber) {
+              const page = pages[pageNumber - 1];
+              const viewport = page.getViewport({ scale: 1.5 });
+              
+              const context = canvas.getContext('2d');
+              canvas.height = viewport.height;
+              canvas.width = viewport.width;
+
+              const renderContext = {
+                canvasContext: context,
+                viewport: viewport
+              };
+
+              page.render(renderContext).promise.then(function() {
+                loading.style.display = 'none';
+                
+                // PDF 渲染完成后，延迟 500ms 后自动打印
+                setTimeout(function() {
+                  window.print();
+                  // 打印完成后延迟 1000ms 关闭窗口
+                  setTimeout(function() {
+                    window.close();
+                  }, 1000);
+                }, 500);
+              });
+            }
           </script>
         </body>
         </html>
