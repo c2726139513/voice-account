@@ -37,9 +37,11 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
     if (!printContent) return
 
     try {
-      // 动态导入 html2pdf.js
+      // 动态导入 html2pdf.js 和 pdfjs-dist
       const html2pdfModule = await import('html2pdf.js')
       const html2pdf = html2pdfModule.default
+      const pdfjsLib = await import('pdfjs-dist')
+      const pdfjs = pdfjsLib.default
 
       // 配置 PDF 生成选项
       const opt = {
@@ -68,19 +70,163 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
       const pdfUrl = URL.createObjectURL(pdf)
       console.log('PDF URL:', pdfUrl)
 
-      // 直接在新窗口中打开 PDF
-      const printWindow = window.open(pdfUrl, '_blank')
+      // 创建新窗口用于显示 PDF
+      const printWindow = window.open('', '_blank')
       if (!printWindow) {
         alert('请允许弹出窗口以进行打印')
         return
       }
 
-      // 等待 PDF 加载完成后打印
-      setTimeout(() => {
-        printWindow.print()
-        // 关闭弹窗
-        onClose()
-      }, 1500)
+      // 在新窗口中设置 PDF 查看器
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>打印账单</title>
+          <style>
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            html, body {
+              width: 100%;
+              height: 100%;
+              overflow: hidden;
+              display: flex;
+              flex-direction: column;
+            }
+            #pdf-container {
+              flex: 1;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              background: #f5f5f5;
+            }
+            #pdf-canvas {
+              max-width: 100%;
+              max-height: 100%;
+              box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            #toolbar {
+              padding: 10px;
+              background: #fff;
+              border-bottom: 1px solid #ddd;
+              display: flex;
+              justify-content: center;
+              gap: 10px;
+            }
+            button {
+              padding: 8px 16px;
+              background: #007bff;
+              color: white;
+              border: none;
+              border-radius: 4px;
+              cursor: pointer;
+              font-size: 14px;
+            }
+            button:hover {
+              background: #0056b3;
+            }
+            #loading {
+              position: absolute;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              font-size: 16px;
+              color: #666;
+            }
+          </style>
+        </head>
+        <body>
+          <div id="loading">正在加载 PDF...</div>
+          <div id="toolbar">
+            <button onclick="window.print()">打印</button>
+            <button onclick="window.close()">关闭</button>
+          </div>
+          <div id="pdf-container">
+            <canvas id="pdf-canvas"></canvas>
+          </div>
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+          <script>
+            const pdfUrl = '${pdfUrl}';
+            const canvas = document.getElementById('pdf-canvas');
+            const loading = document.getElementById('loading');
+            const container = document.getElementById('pdf-container');
+
+            pdfjsLib = window['pdfjs-dist/build/pdf'];
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+            const loadingTask = pdfjsLib.getDocument(pdfUrl);
+            loadingTask.promise.then(function(pdf) {
+              console.log('PDF 加载成功，页数:', pdf.numPages);
+              
+              const numPages = pdf.numPages;
+              let currentPage = 1;
+
+              function renderPage(pageNumber) {
+                pdf.getPage(pageNumber).then(function(page) {
+                  const viewport = page.getViewport({ scale: 1.5 });
+                  
+                  const context = canvas.getContext('2d');
+                  canvas.height = viewport.height;
+                  canvas.width = viewport.width;
+
+                  const renderContext = {
+                    canvasContext: context,
+                    viewport: viewport
+                  };
+
+                  page.render(renderContext).promise.then(function() {
+                    loading.style.display = 'none';
+                    
+                    if (pageNumber < numPages) {
+                      // 如果有多页，显示导航按钮
+                      if (!document.getElementById('nav-buttons')) {
+                        const navDiv = document.createElement('div');
+                        navDiv.id = 'nav-buttons';
+                        navDiv.style.cssText = 'padding: 10px; text-align: center; background: #fff;';
+                        navDiv.innerHTML = \`
+                          <button onclick="prevPage()">上一页</button>
+                          <span id="page-info">第 \${currentPage} / \${numPages} 页</span>
+                          <button onclick="nextPage()">下一页</button>
+                        \`;
+                        document.body.insertBefore(navDiv, container);
+                      }
+                    }
+                  });
+                });
+              }
+
+              window.prevPage = function() {
+                if (currentPage > 1) {
+                  currentPage--;
+                  document.getElementById('page-info').textContent = '第 ' + currentPage + ' / ' + numPages + ' 页';
+                  renderPage(currentPage);
+                }
+              };
+
+              window.nextPage = function() {
+                if (currentPage < numPages) {
+                  currentPage++;
+                  document.getElementById('page-info').textContent = '第 ' + currentPage + ' / ' + numPages + ' 页';
+                  renderPage(currentPage);
+                }
+              };
+
+              renderPage(currentPage);
+            }, function(reason) {
+              console.error('PDF 加载失败:', reason);
+              loading.textContent = 'PDF 加载失败: ' + reason;
+            });
+          </script>
+        </body>
+        </html>
+      `)
+      printWindow.document.close()
+
+      // 关闭弹窗
+      onClose()
     } catch (error) {
       console.error('生成 PDF 失败:', error)
       alert('生成 PDF 失败，请重试')
