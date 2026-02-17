@@ -99,7 +99,7 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
         </div>
 
         <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 200px)' }}>
-          <div id="print-content" style={{ width: '190mm', minHeight: '297mm', padding: '5mm', margin: '0 auto', background: 'white' }}>
+          <div id="print-content" style={{ width: '190mm', padding: '5mm', margin: '0 auto', background: 'white' }}>
             <div style={{ textAlign: 'center', marginBottom: '30px', borderBottom: '2px solid #333', paddingBottom: '20px' }}>
               {company?.name ? (
                 <>
