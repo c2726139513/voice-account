@@ -62,32 +62,39 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
 
       // 生成 PDF
       const pdf = await html2pdf().set(opt).from(printContent).output('blob')
+      console.log('PDF 生成成功，大小:', pdf.size)
 
       // 创建 PDF URL
       const pdfUrl = URL.createObjectURL(pdf)
+      console.log('PDF URL:', pdfUrl)
 
-      // 创建 iframe 用于打印
-      const iframe = document.createElement('iframe')
-      iframe.style.display = 'none'
-      document.body.appendChild(iframe)
-
-      // 在 iframe 中加载 PDF
-      iframe.src = pdfUrl
-
-      // 等待 PDF 加载完成后打印
-      iframe.onload = () => {
-        setTimeout(() => {
-          iframe.contentWindow?.print()
-          // 清理
-          setTimeout(() => {
-            document.body.removeChild(iframe)
-            URL.revokeObjectURL(pdfUrl)
-          }, 1000)
-        }, 500)
+      // 创建新窗口用于打印
+      const printWindow = window.open('', '_blank')
+      if (!printWindow) {
+        alert('请允许弹出窗口以进行打印')
+        return
       }
 
-      // 关闭弹窗
-      onClose()
+      // 在新窗口中加载 PDF
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>打印账单</title>
+        </head>
+        <body style="margin: 0; padding: 0;">
+          <iframe src="${pdfUrl}" style="width: 100%; height: 100%; border: none;"></iframe>
+        </body>
+        </html>
+      `)
+      printWindow.document.close()
+
+      // 等待 PDF 加载完成后打印
+      setTimeout(() => {
+        printWindow.print()
+        // 关闭弹窗
+        onClose()
+      }, 1000)
     } catch (error) {
       console.error('生成 PDF 失败:', error)
       alert('生成 PDF 失败，请重试')
