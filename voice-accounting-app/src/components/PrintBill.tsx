@@ -43,14 +43,16 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
 
       // 配置 PDF 生成选项
       const opt = {
-        margin: [10, 10, 10, 10], // 上、右、下、左边距（毫米）
+        margin: [15, 15, 15, 15], // 上、右、下、左边距（毫米）
         filename: `账单-${bill.title}-${formatDate(new Date())}.pdf`,
         image: { type: 'jpeg' as const, quality: 0.98 },
         html2canvas: {
           scale: 2, // 提高清晰度
           useCORS: true,
           logging: false,
-          letterRendering: true
+          letterRendering: true,
+          width: 190 * 2, // 190mm * 2 (scale)
+          windowWidth: 190 * 2
         },
         jsPDF: {
           unit: 'mm' as const,
@@ -99,7 +101,7 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
         </div>
 
         <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 200px)' }}>
-          <div id="print-content" style={{ width: '210mm', minHeight: '297mm', padding: '20px', margin: '0 auto', background: 'white' }}>
+          <div id="print-content" style={{ width: '190mm', minHeight: '297mm', padding: '15mm', margin: '0 auto', background: 'white', boxSizing: 'border-box' }}>
             <div style={{ textAlign: 'center', marginBottom: '30px', borderBottom: '2px solid #333', paddingBottom: '20px' }}>
               {company?.name ? (
                 <>
@@ -135,30 +137,30 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
 
             {bill.invoices.length > 0 ? (
               <>
-                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20px', fontSize: '12px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20px', fontSize: '11px', tableLayout: 'fixed' }}>
                   <thead>
                     <tr>
-                      <th style={{ border: '1px solid #ddd', padding: '12px', textAlign: 'left', backgroundColor: '#f5f5f5', fontWeight: 'bold' }}>日期</th>
-                      <th style={{ border: '1px solid #ddd', padding: '12px', textAlign: 'left', backgroundColor: '#f5f5f5', fontWeight: 'bold' }}>工作描述</th>
-                      <th style={{ border: '1px solid #ddd', padding: '12px', textAlign: 'left', backgroundColor: '#f5f5f5', fontWeight: 'bold' }}>数量</th>
-                      <th style={{ border: '1px solid #ddd', padding: '12px', textAlign: 'left', backgroundColor: '#f5f5f5', fontWeight: 'bold' }}>单价</th>
-                      <th style={{ border: '1px solid #ddd', padding: '12px', textAlign: 'right', backgroundColor: '#f5f5f5', fontWeight: 'bold' }}>金额</th>
+                      <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left', backgroundColor: '#f5f5f5', fontWeight: 'bold', width: '15%' }}>日期</th>
+                      <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left', backgroundColor: '#f5f5f5', fontWeight: 'bold', width: '35%' }}>工作描述</th>
+                      <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'center', backgroundColor: '#f5f5f5', fontWeight: 'bold', width: '10%' }}>数量</th>
+                      <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'right', backgroundColor: '#f5f5f5', fontWeight: 'bold', width: '20%' }}>单价</th>
+                      <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'right', backgroundColor: '#f5f5f5', fontWeight: 'bold', width: '20%' }}>金额</th>
                     </tr>
                   </thead>
                   <tbody>
                     {bill.invoices.map((invoice) => (
                       <tr key={invoice.id}>
-                        <td style={{ border: '1px solid #ddd', padding: '12px', textAlign: 'left' }}>{formatDate(invoice.workDate)}</td>
-                        <td style={{ border: '1px solid #ddd', padding: '12px', textAlign: 'left' }}>{invoice.description}</td>
-                        <td style={{ border: '1px solid #ddd', padding: '12px', textAlign: 'left' }}>{invoice.quantity}</td>
-                        <td style={{ border: '1px solid #ddd', padding: '12px', textAlign: 'left' }}>¥{invoice.unitPrice.toFixed(2)}</td>
-                        <td style={{ border: '1px solid #ddd', padding: '12px', textAlign: 'right' }}>¥{invoice.totalPrice.toFixed(2)}</td>
+                        <td style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left', wordWrap: 'break-word' }}>{formatDate(invoice.workDate)}</td>
+                        <td style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left', wordWrap: 'break-word' }}>{invoice.description}</td>
+                        <td style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'center' }}>{invoice.quantity}</td>
+                        <td style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'right' }}>¥{invoice.unitPrice.toFixed(2)}</td>
+                        <td style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'right' }}>¥{invoice.totalPrice.toFixed(2)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
 
-                <div style={{ textAlign: 'right', marginTop: '20px', fontSize: '18px', fontWeight: 'bold' }}>
+                <div style={{ textAlign: 'right', marginTop: '20px', fontSize: '16px', fontWeight: 'bold', clear: 'both' }}>
                   <div>总计金额：¥{bill.totalAmount.toFixed(2)}</div>
                 </div>
 
