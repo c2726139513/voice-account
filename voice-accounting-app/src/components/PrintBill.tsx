@@ -18,15 +18,10 @@ interface PrintBillProps {
 
 export default function PrintBill({ bill, onClose }: PrintBillProps) {
   const { company } = useCompany()
-  const [html2pdf, setHtml2pdf] = useState<any>(null)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
-    // 动态导入 html2pdf.js 以避免服务器端渲染问题
-    import('html2pdf.js').then((module) => {
-      setHtml2pdf(module.default)
-    })
   }, [])
 
   const formatDate = (date: Date) => {
@@ -39,9 +34,13 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
 
   const handlePrint = async () => {
     const printContent = document.getElementById('print-content')
-    if (!printContent || !html2pdf) return
+    if (!printContent) return
 
     try {
+      // 动态导入 html2pdf.js
+      const html2pdfModule = await import('html2pdf.js')
+      const html2pdf = html2pdfModule.default
+
       // 配置 PDF 生成选项
       const opt = {
         margin: [10, 10, 10, 10], // 上、右、下、左边距（毫米）
