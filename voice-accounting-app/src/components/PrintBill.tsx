@@ -47,7 +47,7 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
         filename: `账单-${bill.title}-${formatDate(new Date())}.pdf`,
         image: { type: 'jpeg' as const, quality: 0.98 },
         html2canvas: {
-          scale: 1, // 使用1倍缩放，避免内容被放大
+          scale: 2, // 使用2倍缩放提高清晰度
           useCORS: true,
           logging: false,
           letterRendering: true
