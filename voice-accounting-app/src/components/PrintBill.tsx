@@ -135,7 +135,7 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
               
               const numPages = pdf.numPages;
               let currentPage = 1;
-              const pages = [];
+              let pages = [];
 
               // 预加载所有页面
               function loadAllPages() {
