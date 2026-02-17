@@ -61,7 +61,30 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
       }
 
       // 生成 PDF
-      await html2pdf().set(opt).from(printContent).save()
+      const pdf = await html2pdf().set(opt).from(printContent).output('blob')
+
+      // 创建 PDF URL
+      const pdfUrl = URL.createObjectURL(pdf)
+
+      // 创建 iframe 用于打印
+      const iframe = document.createElement('iframe')
+      iframe.style.display = 'none'
+      document.body.appendChild(iframe)
+
+      // 在 iframe 中加载 PDF
+      iframe.src = pdfUrl
+
+      // 等待 PDF 加载完成后打印
+      iframe.onload = () => {
+        setTimeout(() => {
+          iframe.contentWindow?.print()
+          // 清理
+          setTimeout(() => {
+            document.body.removeChild(iframe)
+            URL.revokeObjectURL(pdfUrl)
+          }, 1000)
+        }, 500)
+      }
 
       // 关闭弹窗
       onClose()
@@ -99,12 +122,12 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
         </div>
 
         <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 200px)' }}>
-          <div id="print-content" style={{ width: '190mm', padding: '5mm', margin: '0 auto', background: 'white' }}>
-            <div style={{ textAlign: 'center', marginBottom: '30px', borderBottom: '2px solid #333', paddingBottom: '20px' }}>
+          <div id="print-content" style={{ width: '190mm', padding: '5mm', margin: '0 auto', background: '#ffffff', color: '#000000', fontFamily: 'Arial, sans-serif' }}>
+            <div style={{ textAlign: 'center', marginBottom: '30px', borderBottom: '2px solid #000000', paddingBottom: '20px' }}>
               {company?.name ? (
                 <>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '10px' }}>{company.name}</div>
-                  <div style={{ fontSize: '16px', color: '#666' }}>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '10px', color: '#000000' }}>{company.name}</div>
+                  <div style={{ fontSize: '16px', color: '#333333' }}>
                     {company.contactPerson && `联系人：${company.contactPerson}`}
                     {company.contactPerson && company.contactPhone && '\u00A0\u00A0\u00A0\u00A0\u00A0'}
                     {company.contactPhone && `电话：${company.contactPhone}`}
@@ -112,19 +135,19 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
                 </>
               ) : (
                 <>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '10px' }}>账单</div>
-                  <div style={{ fontSize: '16px', color: '#666' }}>{bill.title}</div>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '10px', color: '#000000' }}>账单</div>
+                  <div style={{ fontSize: '16px', color: '#333333' }}>{bill.title}</div>
                 </>
               )}
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-              <div style={{ fontSize: '14px' }}>
+              <div style={{ fontSize: '14px', color: '#000000' }}>
                 <div><strong>客户：</strong>{bill.customer.name}</div>
                 {bill.customer.phone && <div><strong>电话：</strong>{bill.customer.phone}</div>}
                 {bill.customer.email && <div><strong>邮箱：</strong>{bill.customer.email}</div>}
               </div>
-              <div style={{ fontSize: '14px', textAlign: 'right' }}>
+              <div style={{ fontSize: '14px', textAlign: 'right', color: '#000000' }}>
                 <div><strong>创建时间：</strong>{formatDate(bill.createdAt)}</div>
                 {bill.completedAt && (
                   <div><strong>结账时间：</strong>{formatDate(bill.completedAt)}</div>
@@ -135,42 +158,42 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
 
             {bill.invoices.length > 0 ? (
               <>
-                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20px', fontSize: '11px', tableLayout: 'fixed' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20px', fontSize: '11px', tableLayout: 'fixed', color: '#000000' }}>
                   <thead>
                     <tr>
-                      <th style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'left', backgroundColor: '#f5f5f5', fontWeight: 'bold', width: '12%' }}>日期</th>
-                      <th style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'left', backgroundColor: '#f5f5f5', fontWeight: 'bold', width: '38%' }}>工作描述</th>
-                      <th style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'center', backgroundColor: '#f5f5f5', fontWeight: 'bold', width: '10%' }}>数量</th>
-                      <th style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right', backgroundColor: '#f5f5f5', fontWeight: 'bold', width: '20%' }}>单价</th>
-                      <th style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right', backgroundColor: '#f5f5f5', fontWeight: 'bold', width: '20%' }}>金额</th>
+                      <th style={{ border: '1px solid #000000', padding: '6px', textAlign: 'left', backgroundColor: '#f5f5f5', fontWeight: 'bold', width: '12%', color: '#000000' }}>日期</th>
+                      <th style={{ border: '1px solid #000000', padding: '6px', textAlign: 'left', backgroundColor: '#f5f5f5', fontWeight: 'bold', width: '38%', color: '#000000' }}>工作描述</th>
+                      <th style={{ border: '1px solid #000000', padding: '6px', textAlign: 'center', backgroundColor: '#f5f5f5', fontWeight: 'bold', width: '10%', color: '#000000' }}>数量</th>
+                      <th style={{ border: '1px solid #000000', padding: '6px', textAlign: 'right', backgroundColor: '#f5f5f5', fontWeight: 'bold', width: '20%', color: '#000000' }}>单价</th>
+                      <th style={{ border: '1px solid #000000', padding: '6px', textAlign: 'right', backgroundColor: '#f5f5f5', fontWeight: 'bold', width: '20%', color: '#000000' }}>金额</th>
                     </tr>
                   </thead>
                   <tbody>
                     {bill.invoices.map((invoice) => (
                       <tr key={invoice.id}>
-                        <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'left', wordWrap: 'break-word' }}>{formatDate(invoice.workDate)}</td>
-                        <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'left', wordWrap: 'break-word' }}>{invoice.description}</td>
-                        <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'center' }}>{invoice.quantity}</td>
-                        <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>¥{invoice.unitPrice.toFixed(2)}</td>
-                        <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>¥{invoice.totalPrice.toFixed(2)}</td>
+                        <td style={{ border: '1px solid #000000', padding: '6px', textAlign: 'left', wordWrap: 'break-word', color: '#000000' }}>{formatDate(invoice.workDate)}</td>
+                        <td style={{ border: '1px solid #000000', padding: '6px', textAlign: 'left', wordWrap: 'break-word', color: '#000000' }}>{invoice.description}</td>
+                        <td style={{ border: '1px solid #000000', padding: '6px', textAlign: 'center', color: '#000000' }}>{invoice.quantity}</td>
+                        <td style={{ border: '1px solid #000000', padding: '6px', textAlign: 'right', color: '#000000' }}>¥{invoice.unitPrice.toFixed(2)}</td>
+                        <td style={{ border: '1px solid #000000', padding: '6px', textAlign: 'right', color: '#000000' }}>¥{invoice.totalPrice.toFixed(2)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
 
-                <div style={{ textAlign: 'right', marginTop: '20px', fontSize: '16px', fontWeight: 'bold', clear: 'both' }}>
+                <div style={{ textAlign: 'right', marginTop: '20px', fontSize: '16px', fontWeight: 'bold', clear: 'both', color: '#000000' }}>
                   <div>总计金额：¥{bill.totalAmount.toFixed(2)}</div>
                 </div>
 
                 {company?.printFooter && (
                   <div
-                    style={{ marginTop: '30px', paddingTop: '20px', borderTop: '1px solid #ddd', fontSize: '14px', lineHeight: '1.6' }}
+                    style={{ marginTop: '30px', paddingTop: '20px', borderTop: '1px solid #000000', fontSize: '14px', lineHeight: '1.6', color: '#000000' }}
                     dangerouslySetInnerHTML={{ __html: company.printFooter }}
                   />
                 )}
               </>
             ) : (
-              <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+              <div style={{ textAlign: 'center', padding: '40px', color: '#333333' }}>
                 此账单暂无明细项目
               </div>
             )}
