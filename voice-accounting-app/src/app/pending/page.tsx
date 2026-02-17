@@ -15,7 +15,7 @@ type BillWithInvoices = Bill & {
 }
 
 export default function PendingPage() {
-  const { user, logout, hasPermission } = useAuth()
+  const { user, logout, hasPermission, loading: authLoading } = useAuth()
   const [bills, setBills] = useState<BillWithInvoices[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
   const [loading, setLoading] = useState(true)
@@ -28,6 +28,25 @@ export default function PendingPage() {
   const [totalPages, setTotalPages] = useState(1)
   const [managingBill, setManagingBill] = useState<BillWithInvoices | null>(null)
   const [printingBill, setPrintingBill] = useState<BillWithInvoices | null>(null)
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">加载中...</div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login'
+    }
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">正在跳转到登录页...</div>
+      </div>
+    )
+  }
 
 const fetchBills = async () => {
     try {
