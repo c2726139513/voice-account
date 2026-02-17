@@ -51,8 +51,8 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
           useCORS: true,
           logging: false,
           letterRendering: true,
-          width: 190 * 2, // 190mm * 2 (scale)
-          windowWidth: 190 * 2
+          width: 180 * 2, // 180mm * 2 (scale)
+          windowWidth: 180 * 2
         },
         jsPDF: {
           unit: 'mm' as const,
@@ -101,7 +101,7 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
         </div>
 
         <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 200px)' }}>
-          <div id="print-content" style={{ width: '190mm', minHeight: '297mm', padding: '15mm', margin: '0 auto', background: 'white', boxSizing: 'border-box' }}>
+          <div id="print-content" style={{ width: '180mm', minHeight: '297mm', padding: '10mm', margin: '0 auto', background: 'white', boxSizing: 'border-box' }}>
             <div style={{ textAlign: 'center', marginBottom: '30px', borderBottom: '2px solid #333', paddingBottom: '20px' }}>
               {company?.name ? (
                 <>
