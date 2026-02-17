@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { Customer } from '@prisma/client'
+import { useAuth } from '@/contexts/AuthContext'
+import Navigation from '@/components/Navigation'
 
 interface ReportData {
   summary?: {
@@ -39,6 +41,7 @@ interface ReportData {
 }
 
 export default function ReportsPage() {
+  const { user, logout, loading: authLoading } = useAuth()
   const [reportType, setReportType] = useState<'summary' | 'customer' | 'monthly' | 'top-items'>('summary')
   const [reportData, setReportData] = useState<ReportData>({})
   const [loading, setLoading] = useState(false)
@@ -48,6 +51,25 @@ export default function ReportsPage() {
     startDate: '',
     endDate: ''
   })
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">加载中...</div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login'
+    }
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">正在跳转到登录页...</div>
+      </div>
+    )
+  }
 
   useEffect(() => {
     fetchCustomers()
@@ -134,6 +156,7 @@ export default function ReportsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Navigation user={user} onLogout={logout} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">数据分析报告</h1>

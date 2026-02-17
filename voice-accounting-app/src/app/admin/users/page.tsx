@@ -16,12 +16,31 @@ interface User {
 }
 
 export default function UsersPage() {
-  const { user, logout } = useAuth()
+  const { user, logout, loading: authLoading } = useAuth()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [formLoading, setFormLoading] = useState(false)
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">加载中...</div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login'
+    }
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">正在跳转到登录页...</div>
+      </div>
+    )
+  }
 
   const fetchUsers = async () => {
     try {

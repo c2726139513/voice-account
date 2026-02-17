@@ -7,9 +7,28 @@ import Navigation from '@/components/Navigation'
 import SettingsForm from '@/components/SettingsForm'
 
 export default function SettingsPage() {
-  const { user, logout } = useAuth()
+  const { user, logout, loading: authLoading } = useAuth()
   const { company, refreshCompany } = useCompany()
   const [loading, setLoading] = useState(false)
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">加载中...</div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login'
+    }
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">正在跳转到登录页...</div>
+      </div>
+    )
+  }
 
   const handleSave = async (data: { name: string; contactPerson: string; contactPhone: string; printFooter: string }) => {
     setLoading(true)
