@@ -146,6 +146,33 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
                 return Promise.all(promises);
               }
 
+              function renderPage(pageNumber) {
+                const page = pages[pageNumber - 1];
+                const viewport = page.getViewport({ scale: 1.5 });
+                
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                const renderContext = {
+                  canvasContext: context,
+                  viewport: viewport
+                };
+
+                page.render(renderContext).promise.then(function() {
+                  loading.style.display = 'none';
+                  
+                  // PDF 渲染完成后，延迟 500ms 后自动打印
+                  setTimeout(function() {
+                    window.print();
+                    // 打印完成后延迟 1000ms 关闭窗口
+                    setTimeout(function() {
+                      window.close();
+                    }, 1000);
+                  }, 500);
+                });
+              }
+
               loadAllPages().then(function(pagePromises) {
                 pages = pagePromises;
                 renderPage(currentPage);
@@ -154,33 +181,6 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
               console.error('PDF 加载失败:', reason);
               loading.textContent = 'PDF 加载失败: ' + reason;
             });
-
-            function renderPage(pageNumber) {
-              const page = pages[pageNumber - 1];
-              const viewport = page.getViewport({ scale: 1.5 });
-              
-              const context = canvas.getContext('2d');
-              canvas.height = viewport.height;
-              canvas.width = viewport.width;
-
-              const renderContext = {
-                canvasContext: context,
-                viewport: viewport
-              };
-
-              page.render(renderContext).promise.then(function() {
-                loading.style.display = 'none';
-                
-                // PDF 渲染完成后，延迟 500ms 后自动打印
-                setTimeout(function() {
-                  window.print();
-                  // 打印完成后延迟 1000ms 关闭窗口
-                  setTimeout(function() {
-                    window.close();
-                  }, 1000);
-                }, 500);
-              });
-            }
           </script>
         </body>
         </html>
