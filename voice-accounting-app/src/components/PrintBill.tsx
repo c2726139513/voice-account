@@ -161,15 +161,15 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
 
                 page.render(renderContext).promise.then(function() {
                   loading.style.display = 'none';
-                  
-                  // PDF 渲染完成后，延迟 500ms 后自动打印
+
+                  // PDF 渲染完成后，延迟 1000ms 后自动打印
                   setTimeout(function() {
                     window.print();
-                    // 打印完成后延迟 1000ms 关闭窗口
+                    // 打印完成后延迟 2000ms 关闭窗口
                     setTimeout(function() {
                       window.close();
-                    }, 1000);
-                  }, 500);
+                    }, 2000);
+                  }, 1000);
                 });
               }
 
