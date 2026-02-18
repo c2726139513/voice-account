@@ -70,6 +70,9 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
       const pdfUrl = URL.createObjectURL(pdf)
       console.log('PDF URL:', pdfUrl)
 
+      // 关闭弹窗
+      onClose()
+
       // 创建新窗口用于显示 PDF
       const printWindow = window.open('', '_blank')
       if (!printWindow) {
@@ -77,7 +80,7 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
         return
       }
 
-      // 在新窗口中设置 PDF 查看器
+      // 在新窗口中设置 PDF 查看器，使用 pdf.js 的打印功能
       printWindow.document.write(`
         <!DOCTYPE html>
         <html>
@@ -132,7 +135,7 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
             const loadingTask = pdfjsLib.getDocument(pdfUrl);
             loadingTask.promise.then(function(pdf) {
               console.log('PDF 加载成功，页数:', pdf.numPages);
-              
+
               const numPages = pdf.numPages;
               let currentPage = 1;
               let pages = [];
@@ -149,7 +152,7 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
               function renderPage(pageNumber) {
                 const page = pages[pageNumber - 1];
                 const viewport = page.getViewport({ scale: 1.5 });
-                
+
                 const context = canvas.getContext('2d');
                 canvas.height = viewport.height;
                 canvas.width = viewport.width;
@@ -162,14 +165,27 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
                 page.render(renderContext).promise.then(function() {
                   loading.style.display = 'none';
 
-                  // PDF 渲染完成后，延迟 1000ms 后自动打印
+                  // 使用 pdf.js 的打印功能
                   setTimeout(function() {
-                    window.print();
-                    // 打印完成后延迟 2000ms 关闭窗口
-                    setTimeout(function() {
-                      window.close();
-                    }, 2000);
-                  }, 1000);
+                    // 创建隐藏的 iframe 用于打印
+                    const iframe = document.createElement('iframe');
+                    iframe.style.display = 'none';
+                    document.body.appendChild(iframe);
+
+                    // 在 iframe 中加载 PDF
+                    iframe.src = pdfUrl;
+
+                    // 等待 iframe 加载完成后打印
+                    iframe.onload = function() {
+                      setTimeout(function() {
+                        iframe.contentWindow.print();
+                        // 打印完成后延迟 1000ms 关闭窗口
+                        setTimeout(function() {
+                          window.close();
+                        }, 1000);
+                      }, 500);
+                    };
+                  }, 500);
                 });
               }
 
