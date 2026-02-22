@@ -80,7 +80,7 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
         return
       }
 
-      // 在新窗口中直接嵌入 PDF 文件
+      // 在新窗口中使用 embed 标签嵌入 PDF 文件
       printWindow.document.write(`
         <!DOCTYPE html>
         <html>
@@ -97,15 +97,14 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
               height: 100%;
               overflow: hidden;
             }
-            iframe {
+            embed {
               width: 100%;
               height: 100%;
-              border: none;
             }
           </style>
         </head>
         <body>
-          <iframe src="${pdfUrl}" id="pdf-frame"></iframe>
+          <embed src="${pdfUrl}" type="application/pdf" id="pdf-embed">
           <script>
             window.onload = function() {
               setTimeout(function() {
