@@ -80,7 +80,7 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
         return
       }
 
-      // 在新窗口中使用 pdf.js 渲染 PDF 到 canvas，同时保留 PDF 文件用于打印
+      // 在新窗口中使用 pdf.js 渲染 PDF 到 canvas
       printWindow.document.write(`
         <!DOCTYPE html>
         <html>
@@ -110,24 +110,20 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
               font-size: 16px;
               color: #666;
             }
-            #pdf-embed {
-              position: absolute;
-              left: -9999px;
-              width: 1px;
-              height: 1px;
-            }
             @media print {
               body {
                 background: white;
+                display: block;
+                overflow: visible;
               }
-              #loading, #pdf-canvas {
+              #loading {
                 display: none;
               }
-              #pdf-embed {
-                position: static;
-                left: auto;
-                width: 100%;
-                height: 100%;
+              #pdf-canvas {
+                max-width: 100%;
+                max-height: none;
+                box-shadow: none;
+                page-break-inside: avoid;
               }
             }
           </style>
@@ -135,7 +131,6 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
         <body>
           <div id="loading">正在加载 PDF...</div>
           <canvas id="pdf-canvas"></canvas>
-          <embed src="${pdfUrl}" type="application/pdf" id="pdf-embed">
           <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
           <script>
             const pdfUrl = '${pdfUrl}';
