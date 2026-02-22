@@ -37,29 +37,26 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
     if (!printContent) return
 
     try {
-      // 动态导入 html2pdf.js 和 pdfjs-dist
       const html2pdfModule = await import('html2pdf.js')
       const html2pdf = html2pdfModule.default
-      const pdfjsLib = await import('pdfjs-dist')
-      const pdfjs = pdfjsLib.default
 
-      // 配置 PDF 生成选项
       const opt = {
-        margin: [10, 10, 10, 10], // 上、右、下、左边距（毫米）
+        margin: 0,
         filename: `账单-${bill.title}-${formatDate(new Date())}.pdf`,
         image: { type: 'jpeg' as const, quality: 0.98 },
         html2canvas: {
-          scale: 2, // 使用2倍缩放提高清晰度
+          scale: 2,
           useCORS: true,
           logging: false,
-          letterRendering: true
+          letterRendering: true,
+          windowWidth: 800
         },
         jsPDF: {
           unit: 'mm' as const,
           format: 'a4' as const,
           orientation: 'portrait' as const
         },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        pagebreak: { mode: ['avoid-all'] }
       }
 
       // 生成 PDF
@@ -80,11 +77,11 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
         return
       }
 
-      // 在新窗口中使用 pdf.js 渲染 PDF 到 canvas
       printWindow.document.write(`
         <!DOCTYPE html>
         <html>
         <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>打印账单</title>
           <style>
             * {
@@ -94,108 +91,117 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
             }
             html, body {
               width: 100%;
-              height: 100%;
-              overflow: hidden;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              background: #f5f5f5;
+              background: #f0f0f0;
             }
-            #pdf-canvas {
-              max-width: 100%;
-              max-height: 100%;
-              box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            body {
+              padding: 10px;
+            }
+            .page-container {
+              width: 100%;
+              max-width: 800px;
+              margin: 0 auto;
+            }
+            .pdf-page {
+              width: 100%;
+              display: block;
+              margin-bottom: 10px;
+              background: white;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             }
             #loading {
-              font-size: 16px;
+              text-align: center;
+              padding: 20px;
               color: #666;
             }
             @media print {
-              body {
+              html, body {
+                width: 100%;
+                height: auto;
                 background: white;
+                padding: 0;
+                margin: 0;
+              }
+              .page-container {
+                max-width: none;
+                margin: 0;
+                padding: 0;
+              }
+              .pdf-page {
+                width: 100%;
                 display: block;
-                overflow: visible;
+                margin: 0;
+                box-shadow: none;
+                page-break-after: always;
+                page-break-inside: avoid;
+              }
+              .pdf-page:last-child {
+                page-break-after: auto;
               }
               #loading {
                 display: none;
               }
-              #pdf-canvas {
-                max-width: 100%;
-                max-height: none;
-                box-shadow: none;
-                page-break-inside: avoid;
-              }
+            }
+            @page {
+              margin: 0;
+              size: A4;
             }
           </style>
         </head>
         <body>
           <div id="loading">正在加载 PDF...</div>
-          <canvas id="pdf-canvas"></canvas>
+          <div class="page-container" id="pages"></div>
           <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
           <script>
-            const pdfUrl = '${pdfUrl}';
-            const canvas = document.getElementById('pdf-canvas');
-            const loading = document.getElementById('loading');
-
+            var pdfUrl = '${pdfUrl}';
+            var pagesContainer = document.getElementById('pages');
+            var loadingEl = document.getElementById('loading');
+            
             pdfjsLib = window['pdfjs-dist/build/pdf'];
             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
-            const loadingTask = pdfjsLib.getDocument(pdfUrl);
+            
+            var loadingTask = pdfjsLib.getDocument(pdfUrl);
             loadingTask.promise.then(function(pdf) {
-              console.log('PDF 加载成功，页数:', pdf.numPages);
-
-              const numPages = pdf.numPages;
-              let currentPage = 1;
-              let pages = [];
-
-              // 预加载所有页面
-              function loadAllPages() {
-                const promises = [];
-                for (let i = 1; i <= numPages; i++) {
-                  promises.push(pdf.getPage(i));
-                }
-                return Promise.all(promises);
+              var numPages = pdf.numPages;
+              var pagePromises = [];
+              
+              for (var i = 1; i <= numPages; i++) {
+                pagePromises.push(pdf.getPage(i));
               }
-
-              function renderPage(pageNumber) {
-                const page = pages[pageNumber - 1];
-                const viewport = page.getViewport({ scale: 1.5 });
-
-                const context = canvas.getContext('2d');
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
-
-                const renderContext = {
-                  canvasContext: context,
-                  viewport: viewport
-                };
-
-                page.render(renderContext).promise.then(function() {
-                  loading.style.display = 'none';
-
-                  // PDF 渲染完成后，延迟 1 秒后自动打印
+              
+              Promise.all(pagePromises).then(function(pages) {
+                var renderPromises = pages.map(function(page, index) {
+                  var viewport = page.getViewport({ scale: 1.5 });
+                  var canvas = document.createElement('canvas');
+                  canvas.className = 'pdf-page';
+                  canvas.id = 'page-' + (index + 1);
+                  
+                  var context = canvas.getContext('2d');
+                  canvas.width = viewport.width;
+                  canvas.height = viewport.height;
+                  
+                  return page.render({
+                    canvasContext: context,
+                    viewport: viewport
+                  }).promise.then(function() {
+                    pagesContainer.appendChild(canvas);
+                  });
+                });
+                
+                Promise.all(renderPromises).then(function() {
+                  loadingEl.style.display = 'none';
                   setTimeout(function() {
                     window.print();
-                  }, 1000);
+                  }, 300);
                 });
-              }
-
-              loadAllPages().then(function(pagePromises) {
-                pages = pagePromises;
-                renderPage(currentPage);
               });
-            }, function(reason) {
-              console.error('PDF 加载失败:', reason);
-              loading.textContent = 'PDF 加载失败: ' + reason;
+            }).catch(function(err) {
+              loadingEl.textContent = 'PDF 加载失败: ' + err;
             });
           </script>
         </body>
         </html>
       `)
       printWindow.document.close()
-
-      // 关闭弹窗
-      onClose()
     } catch (error) {
       console.error('生成 PDF 失败:', error)
       alert('生成 PDF 失败，请重试')
@@ -230,7 +236,7 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
         </div>
 
         <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 200px)' }}>
-          <div id="print-content" style={{ width: '190mm', padding: '5mm', margin: '0 auto', background: '#ffffff', color: '#000000', fontFamily: 'Arial, sans-serif' }}>
+          <div id="print-content" style={{ width: '210mm', minHeight: '297mm', padding: '10mm', margin: '0 auto', background: '#ffffff', color: '#000000', fontFamily: 'Arial, sans-serif', boxSizing: 'border-box' }}>
             <div style={{ textAlign: 'center', marginBottom: '30px', borderBottom: '2px solid #000000', paddingBottom: '20px' }}>
               {company?.name ? (
                 <>
