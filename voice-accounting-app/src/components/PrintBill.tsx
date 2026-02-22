@@ -80,7 +80,7 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
         return
       }
 
-      // 在新窗口中使用 embed 标签嵌入 PDF 文件
+      // 在新窗口中使用 pdf.js 渲染 PDF 到 canvas，同时保留 PDF 文件用于打印
       printWindow.document.write(`
         <!DOCTYPE html>
         <html>
@@ -96,21 +96,103 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
               width: 100%;
               height: 100%;
               overflow: hidden;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              background: #f5f5f5;
             }
-            embed {
-              width: 100%;
-              height: 100%;
+            #pdf-canvas {
+              max-width: 100%;
+              max-height: 100%;
+              box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            #loading {
+              font-size: 16px;
+              color: #666;
+            }
+            #pdf-embed {
+              position: absolute;
+              left: -9999px;
+              width: 1px;
+              height: 1px;
+            }
+            @media print {
+              body {
+                background: white;
+              }
+              #loading, #pdf-canvas {
+                display: none;
+              }
+              #pdf-embed {
+                position: static;
+                left: auto;
+                width: 100%;
+                height: 100%;
+              }
             }
           </style>
         </head>
         <body>
+          <div id="loading">正在加载 PDF...</div>
+          <canvas id="pdf-canvas"></canvas>
           <embed src="${pdfUrl}" type="application/pdf" id="pdf-embed">
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
           <script>
-            window.onload = function() {
-              setTimeout(function() {
-                window.print();
-              }, 1000);
-            };
+            const pdfUrl = '${pdfUrl}';
+            const canvas = document.getElementById('pdf-canvas');
+            const loading = document.getElementById('loading');
+
+            pdfjsLib = window['pdfjs-dist/build/pdf'];
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+            const loadingTask = pdfjsLib.getDocument(pdfUrl);
+            loadingTask.promise.then(function(pdf) {
+              console.log('PDF 加载成功，页数:', pdf.numPages);
+
+              const numPages = pdf.numPages;
+              let currentPage = 1;
+              let pages = [];
+
+              // 预加载所有页面
+              function loadAllPages() {
+                const promises = [];
+                for (let i = 1; i <= numPages; i++) {
+                  promises.push(pdf.getPage(i));
+                }
+                return Promise.all(promises);
+              }
+
+              function renderPage(pageNumber) {
+                const page = pages[pageNumber - 1];
+                const viewport = page.getViewport({ scale: 1.5 });
+
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                const renderContext = {
+                  canvasContext: context,
+                  viewport: viewport
+                };
+
+                page.render(renderContext).promise.then(function() {
+                  loading.style.display = 'none';
+
+                  // PDF 渲染完成后，延迟 1 秒后自动打印
+                  setTimeout(function() {
+                    window.print();
+                  }, 1000);
+                });
+              }
+
+              loadAllPages().then(function(pagePromises) {
+                pages = pagePromises;
+                renderPage(currentPage);
+              });
+            }, function(reason) {
+              console.error('PDF 加载失败:', reason);
+              loading.textContent = 'PDF 加载失败: ' + reason;
+            });
           </script>
         </body>
         </html>
