@@ -165,26 +165,13 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
                 page.render(renderContext).promise.then(function() {
                   loading.style.display = 'none';
 
-                  // 使用 pdf.js 的打印功能
+                  // 直接调用 window.print() 触发系统打印
                   setTimeout(function() {
-                    // 创建隐藏的 iframe 用于打印
-                    const iframe = document.createElement('iframe');
-                    iframe.style.display = 'none';
-                    document.body.appendChild(iframe);
-
-                    // 在 iframe 中加载 PDF
-                    iframe.src = pdfUrl;
-
-                    // 等待 iframe 加载完成后打印
-                    iframe.onload = function() {
-                      setTimeout(function() {
-                        iframe.contentWindow.print();
-                        // 打印完成后延迟 1000ms 关闭窗口
-                        setTimeout(function() {
-                          window.close();
-                        }, 1000);
-                      }, 500);
-                    };
+                    window.print();
+                    // 打印完成后延迟 1000ms 关闭窗口
+                    setTimeout(function() {
+                      window.close();
+                    }, 1000);
                   }, 500);
                 });
               }
