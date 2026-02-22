@@ -168,11 +168,7 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
                   // 直接调用 window.print() 触发系统打印
                   setTimeout(function() {
                     window.print();
-                    // 打印完成后延迟 1000ms 关闭窗口
-                    setTimeout(function() {
-                      window.close();
-                    }, 1000);
-                  }, 500);
+                  }, 2000);
                 });
               }
 
