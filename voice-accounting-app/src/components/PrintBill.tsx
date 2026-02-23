@@ -69,6 +69,8 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
         return
       }
 
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+
       printWindow.document.write(`
         <!DOCTYPE html>
         <html>
@@ -82,12 +84,12 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
               padding: 0;
               box-sizing: border-box;
             }
-            html, body {
-              width: 100%;
-              min-height: 100%;
-              background: #e0e0e0;
+            html {
+              height: 100%;
             }
             body {
+              min-height: 100%;
+              background: #e0e0e0;
               padding: 10px;
             }
             #container {
@@ -114,17 +116,34 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
               padding: 20px 40px;
               border-radius: 8px;
               box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+              z-index: 100;
+            }
+            #print-btn {
+              display: none;
+              position: fixed;
+              top: 10px;
+              right: 10px;
+              z-index: 1000;
+              padding: 12px 24px;
+              background: #3b82f6;
+              color: white;
+              border: none;
+              border-radius: 8px;
+              font-size: 16px;
+              cursor: pointer;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            }
+            #print-btn:hover {
+              background: #2563eb;
             }
             @media print {
-              * {
-                margin: 0 !important;
-                padding: 0 !important;
-              }
               html, body {
                 width: 100% !important;
                 height: auto !important;
+                min-height: 0 !important;
                 background: white !important;
                 padding: 0 !important;
+                margin: 0 !important;
               }
               #container {
                 max-width: none !important;
@@ -143,9 +162,9 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
                 page-break-inside: avoid;
               }
               .page-canvas:last-child {
-                page-break-after: auto;
+                page-break-after: avoid;
               }
-              #loading {
+              #loading, #print-btn {
                 display: none !important;
               }
             }
@@ -157,13 +176,16 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
         </head>
         <body>
           <div id="loading">正在加载 PDF，请稍候...</div>
+          <button id="print-btn" onclick="window.print()">点击打印</button>
           <div id="container"></div>
           <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
           <script>
             (function() {
+              var isMobile = ${isMobile ? 'true' : 'false'};
               var pdfUrl = '${pdfUrl}';
               var container = document.getElementById('container');
               var loading = document.getElementById('loading');
+              var printBtn = document.getElementById('print-btn');
               
               pdfjsLib = window['pdfjs-dist/build/pdf'];
               pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -171,7 +193,6 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
               pdfjsLib.getDocument(pdfUrl).promise.then(function(pdf) {
                 var totalPages = pdf.numPages;
                 var renderedPages = 0;
-                var allCanvases = [];
                 
                 function renderPage(pageNum) {
                   pdf.getPage(pageNum).then(function(page) {
@@ -188,16 +209,19 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
                       viewport: viewport
                     }).promise.then(function() {
                       container.appendChild(canvas);
-                      allCanvases.push(canvas);
                       renderedPages++;
                       
                       if (renderedPages < totalPages) {
                         renderPage(renderedPages + 1);
                       } else {
                         loading.style.display = 'none';
-                        setTimeout(function() {
-                          window.print();
-                        }, 500);
+                        if (isMobile) {
+                          printBtn.style.display = 'block';
+                        } else {
+                          setTimeout(function() {
+                            window.print();
+                          }, 500);
+                        }
                       }
                     });
                   });
