@@ -63,15 +63,7 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
 
       onClose()
 
-      const printWindow = window.open('', '_blank')
-      if (!printWindow) {
-        alert('请允许弹出窗口以进行打印')
-        return
-      }
-
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-
-      printWindow.document.write(`
+      const printHtml = `
         <!DOCTYPE html>
         <html>
         <head>
@@ -118,24 +110,6 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
               box-shadow: 0 2px 10px rgba(0,0,0,0.1);
               z-index: 100;
             }
-            #print-btn {
-              display: none;
-              position: fixed;
-              top: 10px;
-              right: 10px;
-              z-index: 1000;
-              padding: 12px 24px;
-              background: #3b82f6;
-              color: white;
-              border: none;
-              border-radius: 8px;
-              font-size: 16px;
-              cursor: pointer;
-              box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            }
-            #print-btn:hover {
-              background: #2563eb;
-            }
             @media print {
               html, body {
                 width: 100% !important;
@@ -164,7 +138,7 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
               .page-canvas:last-child {
                 page-break-after: avoid;
               }
-              #loading, #print-btn {
+              #loading {
                 display: none !important;
               }
             }
@@ -176,26 +150,29 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
         </head>
         <body>
           <div id="loading">正在加载 PDF，请稍候...</div>
-          <button id="print-btn" onclick="window.print()">点击打印</button>
           <div id="container"></div>
           <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
           <script>
-            (function() {
-              var isMobile = ${isMobile ? 'true' : 'false'};
-              var pdfUrl = '${pdfUrl}';
-              var container = document.getElementById('container');
-              var loading = document.getElementById('loading');
-              var printBtn = document.getElementById('print-btn');
-              
-              pdfjsLib = window['pdfjs-dist/build/pdf'];
-              pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-              
+            var pdfUrl = '${pdfUrl}';
+            var container = document.getElementById('container');
+            var loading = document.getElementById('loading');
+            var totalPages = 0;
+            var renderedPages = 0;
+            
+            pdfjsLib = window['pdfjs-dist/build/pdf'];
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+            
+            function renderAllPagesAndPrint() {
               pdfjsLib.getDocument(pdfUrl).promise.then(function(pdf) {
-                var totalPages = pdf.numPages;
-                var renderedPages = 0;
+                totalPages = pdf.numPages;
+                var pagePromises = [];
                 
-                function renderPage(pageNum) {
-                  pdf.getPage(pageNum).then(function(page) {
+                for (var i = 1; i <= totalPages; i++) {
+                  pagePromises.push(pdf.getPage(i));
+                }
+                
+                Promise.all(pagePromises).then(function(pages) {
+                  var renderPromises = pages.map(function(page) {
                     var viewport = page.getViewport({ scale: 1.5 });
                     var canvas = document.createElement('canvas');
                     canvas.className = 'page-canvas';
@@ -204,40 +181,46 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
                     canvas.width = viewport.width;
                     canvas.height = viewport.height;
                     
-                    page.render({
+                    return page.render({
                       canvasContext: ctx,
                       viewport: viewport
                     }).promise.then(function() {
                       container.appendChild(canvas);
-                      renderedPages++;
-                      
-                      if (renderedPages < totalPages) {
-                        renderPage(renderedPages + 1);
-                      } else {
-                        loading.style.display = 'none';
-                        if (isMobile) {
-                          printBtn.style.display = 'block';
-                        } else {
-                          setTimeout(function() {
-                            window.print();
-                          }, 500);
-                        }
-                      }
                     });
                   });
-                }
-                
-                renderPage(1);
+                  
+                  Promise.all(renderPromises).then(function() {
+                    loading.style.display = 'none';
+                    window.print();
+                  });
+                });
               }).catch(function(err) {
                 loading.textContent = 'PDF 加载失败: ' + err.message;
                 console.error('PDF load error:', err);
               });
-            })();
+            }
+            
+            window.onload = function() {
+              setTimeout(renderAllPagesAndPrint, 100);
+            };
           </script>
         </body>
         </html>
-      `)
-      printWindow.document.close()
+      `
+
+      const blob = new Blob([printHtml], { type: 'text/html' })
+      const blobUrl = URL.createObjectURL(blob)
+      const printWindow = window.open(blobUrl, '_blank')
+
+      if (!printWindow) {
+        URL.revokeObjectURL(blobUrl)
+        alert('请允许弹出窗口以进行打印')
+        return
+      }
+
+      setTimeout(function() {
+        URL.revokeObjectURL(blobUrl)
+      }, 60000)
     } catch (error) {
       console.error('生成 PDF 失败:', error)
       alert('生成 PDF 失败，请重试')
