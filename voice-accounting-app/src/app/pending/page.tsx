@@ -29,26 +29,7 @@ export default function PendingPage() {
   const [managingBill, setManagingBill] = useState<BillWithInvoices | null>(null)
   const [printingBill, setPrintingBill] = useState<BillWithInvoices | null>(null)
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">加载中...</div>
-      </div>
-    )
-  }
-
-  if (!user) {
-    if (typeof window !== 'undefined') {
-      window.location.href = '/login'
-    }
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">正在跳转到登录页...</div>
-      </div>
-    )
-  }
-
-const fetchBills = async () => {
+  const fetchBills = async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams()
@@ -76,7 +57,7 @@ const fetchBills = async () => {
     try {
       const response = await fetch('/api/customers')
       const data = await response.json()
-      
+
       if (response.ok) {
         setCustomers(data.customers)
       }
@@ -86,9 +67,30 @@ const fetchBills = async () => {
   }
 
   useEffect(() => {
-    fetchBills()
-    fetchCustomers()
-  }, [currentPage, filters])
+    if (!authLoading && user) {
+      fetchBills()
+      fetchCustomers()
+    }
+  }, [currentPage, filters, authLoading, user])
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">加载中...</div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login'
+    }
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">正在跳转到登录页...</div>
+      </div>
+    )
+  }
 
   const handleFilterChange = (newFilters: typeof filters) => {
     setFilters(newFilters)
