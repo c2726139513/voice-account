@@ -113,11 +113,18 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
             @media print {
               html, body {
                 width: 100% !important;
-                height: auto !important;
-                min-height: 0 !important;
+                height: 100% !important;
                 background: white !important;
                 padding: 0 !important;
                 margin: 0 !important;
+                overflow: hidden !important;
+              }
+              #loading {
+                display: none !important;
+                visibility: hidden !important;
+                position: absolute !important;
+                left: -9999px !important;
+                top: -9999px !important;
               }
               #container {
                 max-width: none !important;
@@ -137,9 +144,6 @@ export default function PrintBill({ bill, onClose }: PrintBillProps) {
               }
               .page-canvas:last-child {
                 page-break-after: avoid;
-              }
-              #loading {
-                display: none !important;
               }
             }
             @page {
