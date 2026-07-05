@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { prisma } from '@/lib/prisma';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -22,51 +23,25 @@ export async function middleware(request: NextRequest) {
   // 如果是公共路径且已登录，重定向到首页
   if (isPublicPath && token) {
     try {
-      const payload = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-in-production') as any;
+      const payload = jwt.verify(token, JWT_SECRET) as { userId: string } | null;
       if (payload) {
         return NextResponse.redirect(new URL('/', request.url));
       }
-    } catch (error) {
+    } catch {
       // Token无效，继续正常流程
     }
   }
 
   // 如果不是公共路径且未登录，重定向到登录页
   if (!isPublicPath && !token) {
-    console.log('Redirecting to login, pathname:', pathname);
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // 如果有token，验证是否有效
+  // 验证token有效性（仅JWT签名验证，不查数据库）
   if (token && !isPublicPath) {
     try {
-      const payload = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-in-production') as any;
-      if (!payload) {
-        // token无效，清除cookie并重定向到登录页
-        const response = NextResponse.redirect(new URL('/login', request.url));
-        response.cookies.delete('token');
-        return response;
-      }
-
-      // 验证用户是否仍然存在
-      try {
-        const user = await prisma.user.findUnique({
-          where: { id: payload.userId },
-          select: { id: true }
-        });
-        
-        if (!user) {
-          const response = NextResponse.redirect(new URL('/login', request.url));
-          response.cookies.delete('token');
-          return response;
-        }
-      } catch (error) {
-        console.error('Middleware error:', error);
-        const response = NextResponse.redirect(new URL('/login', request.url));
-        response.cookies.delete('token');
-        return response;
-      }
-    } catch (error) {
+      jwt.verify(token, JWT_SECRET) as { userId: string };
+    } catch {
       // Token无效，清除cookie并重定向到登录页
       const response = NextResponse.redirect(new URL('/login', request.url));
       response.cookies.delete('token');
