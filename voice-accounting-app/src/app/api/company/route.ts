@@ -15,18 +15,21 @@ export async function GET(request: NextRequest) {
     const token = request.cookies.get('token')?.value
     const isAuthenticated = token && verifyToken(token)
 
-    if (isAuthenticated) {
-      return NextResponse.json({ company })
-    } else {
-      return NextResponse.json({
-        company: {
-          id: company.id,
-          name: company.name,
-          contactPerson: null,
-          contactPhone: null
-        }
-      })
-    }
+    const response = NextResponse.json(
+      isAuthenticated
+        ? { company }
+        : {
+            company: {
+              id: company.id,
+              name: company.name,
+              contactPerson: null,
+              contactPhone: null
+            }
+          }
+    )
+    // 公司信息极少变更，允许 EdgeOne CDN 缓存 5 分钟
+    response.headers.set('Cache-Control', 'public, s-maxage=300, max-age=60, stale-while-revalidate=600')
+    return response
   } catch (error) {
     console.error('获取公司信息时出错:', error)
     return NextResponse.json({ error: '服务器内部错误' }, { status: 500 })
