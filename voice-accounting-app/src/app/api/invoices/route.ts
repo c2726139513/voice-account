@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { EnhancedVoiceParser, ParsedInvoice } from '@/lib/enhancedVoiceParser'
 
-const enhancedVoiceParser = new EnhancedVoiceParser()
-
-// 初始化增强解析器
-enhancedVoiceParser.initialize().catch(console.error)
+async function getParser() {
+  const { EnhancedVoiceParser } = await import('@/lib/enhancedVoiceParser')
+  const parser = new EnhancedVoiceParser()
+  await parser.initialize()
+  return parser
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,8 +26,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '语音识别失败，请重试' }, { status: 400 })
     }
 
-    // 使用增强解析器
-    const parsedInvoice = await enhancedVoiceParser.parseVoiceInput(voiceText)
+    // 使用增强解析器（延迟加载，避免模块级初始化）
+    const parser = await getParser()
+    const parsedInvoice = await parser.parseVoiceInput(voiceText)
 
     console.log('语音文本:', voiceText)
     console.log('解析结果:', parsedInvoice)
