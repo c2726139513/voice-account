@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
@@ -9,31 +10,47 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
 
+    const invoiceWhere: Prisma.InvoiceWhereInput = {
+      ...(startDate && endDate
+        ? { workDate: { gte: new Date(startDate), lte: new Date(endDate) } }
+        : {}),
+      ...(customerId ? { customerId } : {})
+    }
+    const billWhere: Prisma.BillWhereInput = {
+      ...(startDate && endDate
+        ? { createdAt: { gte: new Date(startDate), lte: new Date(`${endDate}T23:59:59.999Z`) } }
+        : {}),
+      ...(customerId ? { customerId } : {})
+    }
+
     if (type === 'summary') {
       // 总体统计报告
-      const totalInvoices = await prisma.invoice.count()
+      const totalInvoices = await prisma.invoice.count({
+        where: invoiceWhere
+      })
       const totalAmount = await prisma.invoice.aggregate({
+        where: invoiceWhere,
         _sum: { totalPrice: true }
       })
       
       const activeInvoices = await prisma.invoice.count({
-        where: { status: 'ACTIVE' }
+        where: { ...invoiceWhere, status: 'ACTIVE' }
       })
       
       // 计算在账单表单中的发票数量
       const invoicesInBills = await prisma.invoice.count({
-        where: { billId: { not: null } }
+        where: { ...invoiceWhere, billId: { not: null } }
       })
       
       const availableInvoices = activeInvoices - invoicesInBills
 
-      const totalBills = await prisma.bill.count()
+      const totalBills = await prisma.bill.count({ where: billWhere })
       const pendingBills = await prisma.bill.count({
-        where: { status: 'PENDING' }
+        where: { ...billWhere, status: 'PENDING' }
       })
       
       const completedBills = await prisma.bill.count({
-        where: { status: 'COMPLETED' }
+        where: { ...billWhere, status: 'COMPLETED' }
       })
 
       return NextResponse.json({
@@ -51,6 +68,7 @@ export async function GET(request: NextRequest) {
     } else if (type === 'customer') {
       // 客户报告
       const customerStats = await prisma.customer.findMany({
+        where: customerId ? { id: customerId } : undefined,
         include: {
           invoices: {
             where: startDate && endDate ? {
@@ -64,7 +82,7 @@ export async function GET(request: NextRequest) {
             where: startDate && endDate ? {
               createdAt: {
                 gte: new Date(startDate),
-                lte: new Date(endDate)
+                lte: new Date(`${endDate}T23:59:59.999Z`)
               }
             } : undefined
           }
@@ -84,7 +102,7 @@ export async function GET(request: NextRequest) {
           invoiceTotal,
           billCount: customer.bills.length,
           billTotal,
-          totalAmount: invoiceTotal + billTotal
+          totalAmount: invoiceTotal
         }
       })
 
@@ -96,9 +114,10 @@ export async function GET(request: NextRequest) {
           DATE_TRUNC('month', "workDate") as month,
           COUNT(*) as invoice_count,
           SUM("totalPrice") as total_amount
-        FROM "Invoice" 
+        FROM "invoices" 
         WHERE "workDate" >= ${startDate ? new Date(startDate) : new Date(new Date().getFullYear(), 0, 1)}
-          AND "workDate" <= ${endDate ? new Date(endDate) : new Date()}
+          AND "workDate" <= ${endDate ? new Date(`${endDate}T23:59:59.999Z`) : new Date()}
+          ${customerId ? Prisma.sql`AND "customerId" = ${customerId}` : Prisma.empty}
         GROUP BY DATE_TRUNC('month', "workDate")
         ORDER BY month DESC
       ` as Array<{
@@ -118,12 +137,7 @@ export async function GET(request: NextRequest) {
       // 热门项目报告
       const topItems = await prisma.invoice.groupBy({
         by: ['description'],
-        where: startDate && endDate ? {
-          workDate: {
-            gte: new Date(startDate),
-            lte: new Date(endDate)
-          }
-        } : undefined,
+        where: invoiceWhere,
         _sum: {
           totalPrice: true,
           quantity: true
