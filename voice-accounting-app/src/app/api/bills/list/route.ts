@@ -6,6 +6,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status') || 'PENDING'
     const customerId = searchParams.get('customerId')
+    const startDate = searchParams.get('startDate')
+    const endDate = searchParams.get('endDate')
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
 
@@ -13,6 +15,20 @@ export async function GET(request: NextRequest) {
 
     if (customerId) {
       where.customerId = customerId
+    }
+
+    if (startDate || endDate) {
+      where.createdAt = {}
+      if (startDate) {
+        where.createdAt.gte = new Date(startDate)
+      }
+      if (endDate) {
+        // endDate 为纯日期（YYYY-MM-DD）时扩展到当天结束，避免漏掉当天创建的账单
+        const end = /^\d{4}-\d{2}-\d{2}$/.test(endDate)
+          ? new Date(`${endDate}T23:59:59.999Z`)
+          : new Date(endDate)
+        where.createdAt.lte = end
+      }
     }
 
     const skip = (page - 1) * limit
