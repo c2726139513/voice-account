@@ -42,10 +42,10 @@ curl -c cookies.txt -X POST /api/auth/login \
 
 ### 重要：认证边界（务必了解）
 
-- **中间件对所有 `/api/*` 路径直接放行**，只有 5 个处理器自行校验 token：`GET /api/auth/me`、`PUT /api/company`、`GET/POST /api/users`、`PUT/DELETE /api/users/[id]`
-- **账单/发票/客户/报表等业务端点服务端不做鉴权** —— 即使 Agent 不带 cookie 也能调用
-- 但仍**建议始终先登录并携带 cookie**，原因：`GET /api/company` 未登录时会隐藏联系人和打印页脚字段
-- **服务端不做 RBAC**：`hasPermission` 只在前端 UI 使用，API 层没有权限校验
+- **所有业务端点强制鉴权**（客户/账单/发票/报表）：无 token 或 token 无效 → 401 `{"error":"未授权"}`。首次调用前必须先 `POST /api/auth/login` 拿 cookie（`curl -c cookies.txt`），后续请求 `curl -b cookies.txt`
+- **公开端点（无需登录）**：`POST /api/auth/login`、`POST /api/auth/logout`、`GET /api/auth/check-users`、`POST /api/auth/init-admin`、`GET /api/auth/me`（未登录时自返 401）、`GET /api/company`（未登录返回脱敏数据，隐藏联系人与打印页脚）
+- 鉴权实现在各路由处理器内（`requireAuth` 统一校验 cookie 中的 JWT），Next 中间件只负责页面跳转，对 `/api/*` 直接放行
+- **服务端不做 RBAC**：`hasPermission` 只在前端 UI 使用；例外是 `/api/users*` 需 `isAdmin`（否则 403 `需要管理员权限`）
 
 ---
 
@@ -139,7 +139,7 @@ Bill.status:     创建 → PENDING --结账--> COMPLETED --退回--> PENDING
 - 创建/挂载的发票**必须同属一个客户**，否则 400（挂载时响应含 `invalidCustomers: [客户名]`）
 - `totalAmount = Σ 发票 totalPrice`，在创建/挂载/卸载/发票PUT时自动重算
 - `PATCH` 是**唯一**的状态变更端点：COMPLETED 时写 `completedAt=now`，退回 PENDING 时置 null
-- `GET /api/bills/list` **会忽略 startDate/endDate 参数**（只认 status/customerId/page/limit）
+- `GET /api/bills/list` 支持 `startDate`/`endDate`（按 `createdAt` 过滤，纯日期 `endDate` 自动扩展到当天 23:59:59.999Z），其余参数为 status/customerId/page/limit
 
 ### 报表统计
 
@@ -147,8 +147,8 @@ Bill.status:     创建 → PENDING --结账--> COMPLETED --退回--> PENDING
 |---|---|---|---|
 | GET | `/api/reports` | `?type=summary\|customer\|monthly\|top-items&startDate=&endDate=` | 见下 |
 
-- `type=summary`（默认）→ `{"summary":{totalInvoices, totalAmount, activeInvoices, availableInvoices, invoicesInBills, totalBills, pendingBills, completedBills}}`；⚠️ `totalAmount` 汇总**全部**发票，**不受日期参数影响**
-- `type=customer` → `{"customers":[{id,name,phone,email,invoiceCount,invoiceTotal,billCount,billTotal,totalAmount}]}`；日期过滤需**同时传** startDate 和 endDate（按 `workDate` 过滤发票）；⚠️ `totalAmount = invoiceTotal + billTotal` 存在重复计算，**取客户总金额请用 `invoiceTotal`**
+- `type=summary`（默认）→ `{"summary":{totalInvoices, totalAmount, activeInvoices, availableInvoices, invoicesInBills, totalBills, pendingBills, completedBills}}`；`totalAmount`/`totalInvoices` 受 `startDate`/`endDate` 约束（发票按 `workDate`，账单按 `createdAt`），并支持 `customerId`
+- `type=customer` → `{"customers":[{id,name,phone,email,invoiceCount,invoiceTotal,billCount,billTotal,totalAmount}]}`；日期过滤需**同时传** startDate 和 endDate（按 `workDate` 过滤发票）；`totalAmount === invoiceTotal`（已修复重复计算，两者任取其一）
 - `type=monthly` → `{"monthlyData":[{month:"2026年1月",invoiceCount,totalAmount}]}`；不传日期时默认今年年初至今
 - `type=top-items` → `{"topItems":[{description,totalCount,totalQuantity,totalAmount}]}` 按金额 Top10；日期需成对传入
 
@@ -204,7 +204,7 @@ curl -b cookies.txt "/api/reports?type=customer"
 在返回的 `customers[]` 中按 `name` 匹配，读 **`invoiceTotal`**（该客户全部发票金额合计）。
 
 - 需要限定时间：追加 `&startDate=2026-01-01&endDate=2026-07-06`（**两个必须同时传**才生效）
-- ⚠️ 不要读 `totalAmount`（= invoiceTotal + billTotal，重复计算）
+- `totalAmount` 与 `invoiceTotal` 相等（已修复重复计算），读任一即可
 - 仅想看挂在总账单上（未进表单）的发票：`GET /api/invoices/list?customerId={id}&limit=1000` 后自行求和（注意 `pagination.total` 可能大于返回条数，需翻页）
 
 ### 5.3 时间范围查询："2026-06-01 至 2026-06-30 的账单金额"
@@ -216,7 +216,7 @@ curl -b cookies.txt "/api/reports?type=customer&startDate=2026-06-01&endDate=202
 - 对返回的 `invoiceTotal` 求和 = 该区间全客户发票总额
 - 按月趋势：`type=monthly`（可配合 startDate/endDate）
 - 按客户看区间明细也可用 `GET /api/invoices/list?customerId=&startDate=&endDate=&limit=1000` 后汇总（该端点返回的发票带 `workDate`）
-- ⚠️ `type=summary` 的 `totalAmount` **不受日期过滤**，区间查询勿用它
+- ⚠️ `type=summary` 的 `totalAmount` 现受 `startDate`/`endDate` 约束（区间查询可用）
 
 ### 5.4 待结账单与结账
 
@@ -280,8 +280,8 @@ curl -b cookies.txt "/api/company"
 
 ## 6. 已知问题与陷阱（必须遵守）
 
-> **部署状态**：以下第 1–6 条的修复已完成于 `edgeone-page` 分支并通过本地回归验证（8/8），
-> 但 **EdgeOne 重新部署前线上仍是旧行为**。重新部署后本节即为最终事实。
+> **部署状态**：第 1–8 条的修复已部署上线并验证（8/8）。第 11 条（业务端点强制鉴权）为最新变更，
+> **EdgeOne 重新部署前线上仍是旧行为**（无 cookie 也能查数据）。重新部署后本节即为最终事实。
 
 1. **`GET /api/customers/{id}/check-invoices` 可用**（已修复 ID 解析）—— 返回 `{ hasInvoices, invoiceCount }`。
 2. **`POST /api/invoices/batch-update` 只接受 `status: "ACTIVE"`** —— 传 `PENDING`/`COMPLETED` 返回 400（修复前是 500）。发票状态枚举只有 `ACTIVE`，实际语义近乎 no-op；批量结账状态用账单级 `PATCH /api/bills/{id}`。
@@ -293,6 +293,7 @@ curl -b cookies.txt "/api/company"
 8. **PUT/更新类端点省略字段会清空**：`PUT /api/company`、`PUT /api/users/{id}` 省略的可选字段会被置 `null`/`[]`/`false` —— 必须传全量字段。
 9. **发票状态只有一个合法值 `ACTIVE`**，任何写入 `PENDING`/`COMPLETED` 到发票的请求都会失败（batch-update 现在提前 400 拦截）。
 10. **报错信息是中文**，统一先判 HTTP 状态码再读 `error` 字段。
+11. **所有业务端点强制鉴权**（最新）—— 客户/账单/发票/报表端点无 cookie 或 token 无效 → 401 `{"error":"未授权"}`；首次调用前必须 `POST /api/auth/login` 拿 cookie。公开端点仅：`auth/login`、`auth/logout`、`auth/check-users`、`auth/init-admin`、`auth/me`（自返 401）、`GET /api/company`（脱敏数据）。
 
 ---
 

@@ -3,16 +3,17 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
-export async function middleware(request: NextRequest) {
+// Next.js 16：middleware.ts 已更名/废弃，此处为 proxy.ts（同逻辑）
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // 不需要认证的路径
   const publicPaths = ['/login', '/init-admin'];
   const isPublicPath = publicPaths.includes(pathname);
-  
-  // API路径不需要中间件处理
+
+  // API路径不做页面级跳转（鉴权由各路由的 requireAuth 统一处理）
   const isApiPath = pathname.startsWith('/api/');
-  
+
   if (isApiPath) {
     return NextResponse.next();
   }
