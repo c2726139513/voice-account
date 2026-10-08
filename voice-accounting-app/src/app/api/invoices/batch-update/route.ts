@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '账单ID列表不能为空' }, { status: 400 })
     }
 
-    if (!['PENDING', 'COMPLETED'].includes(status)) {
+    if (status !== 'ACTIVE') {
       return NextResponse.json({ error: '无效的状态' }, { status: 400 })
     }
 
