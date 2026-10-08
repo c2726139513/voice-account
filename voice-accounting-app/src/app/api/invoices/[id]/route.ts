@@ -94,6 +94,20 @@ export async function DELETE(
       }
     })
 
+    // 如果发票属于某个账单，删除后重算账单总金额，避免总额过期
+    if (invoice.billId) {
+      const billInvoices = await prisma.invoice.findMany({
+        where: { billId: invoice.billId }
+      })
+
+      const totalAmount = billInvoices.reduce((sum, inv) => sum + inv.totalPrice, 0)
+
+      await prisma.bill.update({
+        where: { id: invoice.billId },
+        data: { totalAmount }
+      })
+    }
+
     return NextResponse.json({ invoice })
   } catch (error) {
     console.error('删除账单时出错:', error)
