@@ -280,20 +280,19 @@ curl -b cookies.txt "/api/company"
 
 ## 6. 已知问题与陷阱（必须遵守）
 
-> **部署状态**：第 1–8 条的修复已部署上线并验证（8/8）。第 11 条（业务端点强制鉴权）为最新变更，
+> **部署状态**：第 1–7 条的修复已部署上线并验证（7/7）。第 10 条（业务端点强制鉴权）为最新变更，
 > **EdgeOne 重新部署前线上仍是旧行为**（无 cookie 也能查数据）。重新部署后本节即为最终事实。
 
 1. **`GET /api/customers/{id}/check-invoices` 可用**（已修复 ID 解析）—— 返回 `{ hasInvoices, invoiceCount }`。
-2. **`POST /api/invoices/batch-update` 只接受 `status: "ACTIVE"`** —— 传 `PENDING`/`COMPLETED` 返回 400（修复前是 500）。发票状态枚举只有 `ACTIVE`，实际语义近乎 no-op；批量结账状态用账单级 `PATCH /api/bills/{id}`。
-3. **`DELETE /api/invoices/{id}` 现在会重算所属账单 `totalAmount`**（已修复）—— 删除已进表单的发票后账单总额自动回正，可直接删除，无需先卸载。
-4. **`GET /api/bills/list` 支持 `startDate`/`endDate`**（已修复）—— 过滤 `createdAt`；纯日期 `endDate` 自动扩展到当天 23:59:59.999Z。
-5. **`/api/reports?type=summary` 支持日期过滤** —— `totalAmount`/`totalInvoices` 均受 `startDate`/`endDate` 约束（发票按 `workDate`，账单按 `createdAt`），同时支持 `customerId`。
-6. **`type=customer` 的 `totalAmount` 不再翻倍**（已修复）—— `totalAmount === invoiceTotal`（账单金额是发票金额的分组，二者相加必然重复）；`customerId` 参数现在生效（修复前被忽略）。
-7. **`type=monthly` 可用**（已修复 SQL 表名，修复前 500）—— 未传 `startDate` 时默认从当年 1 月 1 日起；支持 `customerId`。
-8. **PUT/更新类端点省略字段会清空**：`PUT /api/company`、`PUT /api/users/{id}` 省略的可选字段会被置 `null`/`[]`/`false` —— 必须传全量字段。
-9. **发票状态只有一个合法值 `ACTIVE`**，任何写入 `PENDING`/`COMPLETED` 到发票的请求都会失败（batch-update 现在提前 400 拦截）。
-10. **报错信息是中文**，统一先判 HTTP 状态码再读 `error` 字段。
-11. **所有业务端点强制鉴权**（最新）—— 客户/账单/发票/报表端点无 cookie 或 token 无效 → 401 `{"error":"未授权"}`；首次调用前必须 `POST /api/auth/login` 拿 cookie。公开端点仅：`auth/login`、`auth/logout`、`auth/check-users`、`auth/init-admin`、`auth/me`（自返 401）、`GET /api/company`（脱敏数据）。
+2. **`DELETE /api/invoices/{id}` 现在会重算所属账单 `totalAmount`**（已修复）—— 删除已进表单的发票后账单总额自动回正，可直接删除，无需先卸载。
+3. **`GET /api/bills/list` 支持 `startDate`/`endDate`**（已修复）—— 过滤 `createdAt`；纯日期 `endDate` 自动扩展到当天 23:59:59.999Z。
+4. **`/api/reports?type=summary` 支持日期过滤** —— `totalAmount`/`totalInvoices` 均受 `startDate`/`endDate` 约束（发票按 `workDate`，账单按 `createdAt`），同时支持 `customerId`。
+5. **`type=customer` 的 `totalAmount` 不再翻倍**（已修复）—— `totalAmount === invoiceTotal`（账单金额是发票金额的分组，二者相加必然重复）；`customerId` 参数现在生效（修复前被忽略）。
+6. **`type=monthly` 可用**（已修复 SQL 表名，修复前 500）—— 未传 `startDate` 时默认从当年 1 月 1 日起；支持 `customerId`。
+7. **PUT/更新类端点省略字段会清空**：`PUT /api/company`、`PUT /api/users/{id}` 省略的可选字段会被置 `null`/`[]`/`false` —— 必须传全量字段。
+8. **发票状态只有一个合法值 `ACTIVE`**，任何写入 `PENDING`/`COMPLETED` 到发票的请求都会失败。
+9. **报错信息是中文**，统一先判 HTTP 状态码再读 `error` 字段。
+10. **所有业务端点强制鉴权**（最新）—— 客户/账单/发票/报表端点无 cookie 或 token 无效 → 401 `{"error":"未授权"}`；首次调用前必须 `POST /api/auth/login` 拿 cookie。公开端点仅：`auth/login`、`auth/logout`、`auth/check-users`、`auth/init-admin`、`auth/me`（自返 401）、`GET /api/company`（脱敏数据）。
 
 ---
 
