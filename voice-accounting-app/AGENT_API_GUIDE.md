@@ -44,8 +44,29 @@ curl -c cookies.txt -X POST /api/auth/login \
 
 - **所有业务端点强制鉴权**（客户/账单/发票/报表）：无 token 或 token 无效 → 401 `{"error":"未授权"}`。首次调用前必须先 `POST /api/auth/login` 拿 cookie（`curl -c cookies.txt`），后续请求 `curl -b cookies.txt`
 - **公开端点（无需登录）**：`POST /api/auth/login`、`POST /api/auth/logout`、`GET /api/auth/check-users`、`POST /api/auth/init-admin`、`GET /api/auth/me`（未登录时自返 401）、`GET /api/company`（未登录返回脱敏数据，隐藏联系人与打印页脚）
-- 鉴权实现在各路由处理器内（`requireAuth` 统一校验 cookie 中的 JWT），Next 中间件只负责页面跳转，对 `/api/*` 直接放行
-- **服务端不做 RBAC**：`hasPermission` 只在前端 UI 使用；例外是 `/api/users*` 需 `isAdmin`（否则 403 `需要管理员权限`）
+- 鉴权实现在各路由处理器内（`requireAuth` 校验 cookie JWT；`requirePermission`/`requireAdmin` 在其上叠加权限门禁），Next 中间件只负责页面跳转，对 `/api/*` 直接放行
+- **服务端强制 RBAC**：所有业务端点除登录态外还需对应权限，权限以**数据库实时值**为准（关权立即生效，无需重新登录）。缺权限 → 403 `{"error":"权限不足"}`；`/api/users*` 仍要求 `isAdmin=true`（403 `需要管理员权限`），`isAdmin` 同样读库实时判定。`isAdmin: true` 或 `system:admin` 权限可旁路权限点（但 users 端点仅认 `isAdmin`）
+
+#### 端点权限速查
+
+| 端点 | 所需权限（满足其一即可，除注明外均为单个权限） |
+|---|---|
+| GET/POST `/api/customers`、GET `/api/customers/{id}/check-invoices` | GET=`customer:read`，POST=`customer:create` |
+| DELETE `/api/customers/{id}` | `customer:delete` |
+| POST `/api/invoices`、POST `/api/invoices/manual` | `invoice:create` |
+| GET `/api/invoices/list` | `invoice:read` |
+| PUT `/api/invoices/{id}` | `invoice:update` |
+| DELETE `/api/invoices/{id}` | `invoice:delete` |
+| POST `/api/bills` | `bill:create` |
+| GET `/api/bills/list`、GET `/api/bills/{id}` | `bill:read` |
+| PATCH `/api/bills/{id}` | →COMPLETED 需 `bill:complete`；→PENDING 需 `bill:update` 或 `completed-bill:revert` |
+| DELETE `/api/bills/{id}` | `bill:delete` 或 `pending-bill:delete` |
+| POST `/api/bills/{id}/invoices` | `bill:update` |
+| DELETE `/api/bills/{id}/invoices` | `bill:update` 或 `pending-bill:revert` |
+| GET `/api/reports` | `bill:read` 或 `invoice:read` |
+| GET `/api/company` | 未登录→脱敏 200；登录但无任一读权限（`customer:read`/`invoice:read`/`bill:read`，或 `isAdmin`）→403 |
+| PUT `/api/company` | `system:admin`（或 `isAdmin`） |
+| `/api/users*` | `isAdmin=true`（读库实时判定） |
 
 ---
 
@@ -87,12 +108,15 @@ Invoice.status:  只有 'ACTIVE'（无其他合法值，写入其他值会被数
 Bill.status:     创建 → PENDING --结账--> COMPLETED --退回--> PENDING
 ```
 
-### 权限字符串（17 个，仅供理解用户角色）
+### 权限字符串（18 个，仅供理解用户角色）
 
 `customer:create|read|update|delete`、`invoice:create|read|update|delete`、
 `bill:create|read|update|delete|complete`、`user:create|read|update|delete`、`system:admin`
 
-分组：BASIC(3) ⊂ OPERATOR(10) ⊂ ADMIN(15) ⊂ SUPER_ADMIN(17)。`isAdmin: true` 为全局旁路。
+分组：BASIC(3) ⊂ OPERATOR(10) ⊂ ADMIN(15) ⊂ SUPER_ADMIN(18)。`isAdmin: true` 为全局旁路（users 端点除外，它们只认 `isAdmin`）。
+
+另有 3 个前端 UI 开关使用的补充字符串（不在 PERMISSIONS 常量中，服务端账单端点同样认可）：
+`pending-bill:delete`、`pending-bill:revert`、`completed-bill:revert`
 
 ---
 
@@ -156,8 +180,8 @@ Bill.status:     创建 → PENDING --结账--> COMPLETED --退回--> PENDING
 
 | 方法 | 路径 | 请求 | 响应 |
 |---|---|---|---|
-| GET | `/api/company` | 无 | `{"company":{id,name,contactPerson,contactPhone,printFooter,...}}`；⚠️ 未登录时 contactPerson/contactPhone 为 null 且无 printFooter |
-| PUT | `/api/company` | `{name?,contactPerson?,contactPhone?,printFooter?}` 需登录 | `{"company":{...}}`；⚠️ **省略的字段会被置 null**，必须传全 |
+| GET | `/api/company` | 无 | 未登录 → 脱敏 200（contactPerson/contactPhone 为 null 且无 printFooter）；登录且有任一读权限或 `isAdmin` → 完整数据；登录但权限为空 → 403 `权限不足` |
+| PUT | `/api/company` | `{name?,contactPerson?,contactPhone?,printFooter?}` | `{"company":{...}}`；需 `system:admin` 或 `isAdmin`；**仅更新传入字段**，省略的字段保持原值 |
 
 ### 用户管理（仅管理员）
 
@@ -165,7 +189,7 @@ Bill.status:     创建 → PENDING --结账--> COMPLETED --退回--> PENDING
 |---|---|---|---|
 | GET | `/api/users` | 无 | cookie + `isAdmin=true` |
 | POST | `/api/users` | `{username, password, permissions?: string[], isAdmin?: bool}` | 同上 |
-| PUT | `/api/users/{id}` | `{username, password?, permissions?, isAdmin?}` | 同上；⚠️ 省略 permissions/isAdmin 会被重置为 `[]`/false |
+| PUT | `/api/users/{id}` | `{username, password?, permissions?, isAdmin?}` | 同上；仅更新传入字段，省略 permissions/isAdmin 保持原值 |
 | DELETE | `/api/users/{id}` | 无 | 同上 |
 
 非管理员调用 → 403 `需要管理员权限`；无/无效 token → 401。
