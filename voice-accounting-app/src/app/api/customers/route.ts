@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireAuth } from '@/lib/api-auth'
+import { requirePermission } from '@/lib/api-auth'
 
 export async function GET(request: NextRequest) {
-  const auth = requireAuth(request)
+  const auth = await requirePermission(request, 'customer:read')
   if (auth instanceof NextResponse) return auth
   try {
     const customers = await prisma.customer.findMany({
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = requireAuth(request)
+  const auth = await requirePermission(request, 'customer:create')
   if (auth instanceof NextResponse) return auth
   try {
     const { name, phone, email } = await request.json()

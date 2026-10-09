@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireAuth } from '@/lib/api-auth'
+import { requirePermission } from '@/lib/api-auth'
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = requireAuth(request)
+  const auth = await requirePermission(request, 'invoice:update')
   if (auth instanceof NextResponse) return auth
   try {
     const { id } = await params
@@ -87,7 +87,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = requireAuth(request)
+  const auth = await requirePermission(request, 'invoice:delete')
   if (auth instanceof NextResponse) return auth
   try {
     const { id } = await params

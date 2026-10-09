@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireAuth } from '@/lib/api-auth'
+import { requirePermission } from '@/lib/api-auth'
 
 async function getParser() {
   const { EnhancedVoiceParser } = await import('@/lib/enhancedVoiceParser')
@@ -10,7 +10,7 @@ async function getParser() {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = requireAuth(request)
+  const auth = await requirePermission(request, 'invoice:create')
   if (auth instanceof NextResponse) return auth
   try {
     const body = await request.json()
