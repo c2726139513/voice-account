@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { requireAuth } from '@/lib/api-auth'
+import { requirePermission } from '@/lib/api-auth'
 
 export async function GET(request: NextRequest) {
-  const auth = requireAuth(request)
+  const auth = await requirePermission(request, ['bill:read', 'invoice:read'])
   if (auth instanceof NextResponse) return auth
   try {
     const { searchParams } = new URL(request.url)
