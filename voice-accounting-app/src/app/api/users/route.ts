@@ -1,19 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { verifyToken } from '@/lib/auth'
+import { requireAdmin } from '@/lib/api-auth'
 import bcrypt from 'bcryptjs'
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get('token')?.value
-    if (!token) {
-      return NextResponse.json({ error: '未授权' }, { status: 401 })
-    }
-
-    const decoded = verifyToken(token)
-    if (!decoded || !decoded.isAdmin) {
-      return NextResponse.json({ error: '需要管理员权限' }, { status: 403 })
-    }
+    const auth = await requireAdmin(request)
+    if (auth instanceof NextResponse) return auth
 
     const users = await prisma.user.findMany({
       select: {
@@ -38,15 +31,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const token = request.cookies.get('token')?.value
-    if (!token) {
-      return NextResponse.json({ error: '未授权' }, { status: 401 })
-    }
-
-    const decoded = verifyToken(token)
-    if (!decoded || !decoded.isAdmin) {
-      return NextResponse.json({ error: '需要管理员权限' }, { status: 403 })
-    }
+    const auth = await requireAdmin(request)
+    if (auth instanceof NextResponse) return auth
 
     const body = await request.json()
     const { username, password, permissions, isAdmin } = body
