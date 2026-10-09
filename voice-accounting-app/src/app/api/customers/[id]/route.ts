@@ -1,27 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requirePermission } from '@/lib/api-auth';
+import { requireAuth } from '@/lib/api-auth';
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requirePermission(request, 'customer:delete');
+  const auth = requireAuth(request);
   if (auth instanceof NextResponse) return auth;
   try {
     const { id } = await params;
 
-    // 先检查客户是否有账单
-    const invoices = await prisma.invoice.findMany({
-      where: {
-        customerId: id
-      },
-      select: { id: true }
-    });
+    // 发票与账单表单都随客户级联删除（schema onDelete: Cascade），存在任一关联即拒绝
+    const [invoiceCount, billCount] = await Promise.all([
+      prisma.invoice.count({ where: { customerId: id } }),
+      prisma.bill.count({ where: { customerId: id } })
+    ]);
 
-    if (invoices.length > 0) {
+    if (invoiceCount > 0) {
       return NextResponse.json(
-        { error: `无法删除客户：该客户有 ${invoices.length} 张账单记录` },
+        { error: `无法删除客户：该客户有 ${invoiceCount} 张账单记录` },
+        { status: 400 }
+      );
+    }
+
+    if (billCount > 0) {
+      return NextResponse.json(
+        { error: `无法删除客户：该客户有 ${billCount} 个账单表单` },
         { status: 400 }
       );
     }

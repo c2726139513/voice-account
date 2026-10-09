@@ -51,8 +51,8 @@ curl -c cookies.txt -X POST /api/auth/login \
 
 | 端点 | 所需权限（满足其一即可，除注明外均为单个权限） |
 |---|---|
-| GET/POST `/api/customers`、GET `/api/customers/{id}/check-invoices` | GET=`customer:read`，POST=`customer:create` |
-| DELETE `/api/customers/{id}` | `customer:delete` |
+| GET/POST `/api/customers`、GET `/api/customers/{id}/check-invoices` | GET=`customer:read`，POST=登录即可（所有用户默认可创建） |
+| DELETE `/api/customers/{id}` | 登录即可（所有用户默认可删）；该客户有发票或账单表单时 400 拒绝 |
 | POST `/api/invoices`、POST `/api/invoices/manual` | `invoice:create` |
 | GET `/api/invoices/list` | `invoice:read` |
 | PUT `/api/invoices/{id}` | `invoice:update` |
@@ -128,7 +128,7 @@ Bill.status:     创建 → PENDING --结账--> COMPLETED --退回--> PENDING
 |---|---|---|---|
 | GET | `/api/customers` | 无参（返回全部，按名称排序） | `{"customers":[{...,"_count":{"invoices":n}}]}` |
 | POST | `/api/customers` | `{name(必填), phone?, email?}` | `{"success":true,"customer":{...}}` |
-| DELETE | `/api/customers/{id}` | 无 | `{"success":true,"message":"客户删除成功"}`；400=该客户有账单记录不可删 |
+| DELETE | `/api/customers/{id}` | 无 | `{"success":true,"message":"客户删除成功"}`；400=该客户有账单记录（发票）或账单表单不可删 |
 
 - 客户名查重**大小写不敏感**，重复返回 400 `客户已存在`
 - 查某客户有多少条账单：用 `GET /api/customers` 里的 `_count.invoices`
@@ -308,7 +308,7 @@ curl -b cookies.txt "/api/company"
 > **部署状态**：第 1–7 条的修复已部署上线并验证（7/7）。第 10 条（业务端点强制鉴权）为最新变更，
 > **EdgeOne 重新部署前线上仍是旧行为**（无 cookie 也能查数据）。重新部署后本节即为最终事实。
 
-1. **`GET /api/customers/{id}/check-invoices` 可用**（已修复 ID 解析）—— 返回 `{ hasInvoices, invoiceCount }`。
+1. **`GET /api/customers/{id}/check-invoices` 可用**（已修复 ID 解析）—— 返回 `{ hasInvoices, invoiceCount, hasBills, billCount }`（删除客户前两者都要为 0）。
 2. **`DELETE /api/invoices/{id}` 现在会重算所属账单 `totalAmount`**（已修复）—— 删除已进表单的发票后账单总额自动回正，可直接删除，无需先卸载。
 3. **`GET /api/bills/list` 支持 `startDate`/`endDate`**（已修复）—— 过滤 `createdAt`；纯日期 `endDate` 自动扩展到当天 23:59:59.999Z。
 4. **`/api/reports?type=summary` 支持日期过滤** —— `totalAmount`/`totalInvoices` 均受 `startDate`/`endDate` 约束（发票按 `workDate`，账单按 `createdAt`），同时支持 `customerId`。
@@ -339,4 +339,4 @@ curl -b cookies.txt "/api/company"
 | 改一条账单 | `PUT /api/invoices/{id}`（totalPrice 自动重算，账单总额联动） |
 | 删一条账单 | `DELETE /api/invoices/{id}`（账单总额自动重算，无需先卸载） |
 | 新建客户 | `POST /api/customers` |
-| 客户有几条账单 | `GET /api/customers` → `_count.invoices`，或 `GET /api/customers/{id}/check-invoices` → `invoiceCount` |
+| 客户有几条账单 | `GET /api/customers` → `_count.invoices`，或 `GET /api/customers/{id}/check-invoices` → `invoiceCount`（账单表单数看 `billCount`） |
