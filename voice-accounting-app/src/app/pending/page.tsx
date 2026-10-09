@@ -226,8 +226,8 @@ export default function PendingPage() {
                       <BillCard
                         key={bill.id}
                         bill={bill}
-                        onConfirm={handleConfirmBill}
-                        onManage={handleManageBill}
+                        onConfirm={hasPermission('bill:complete') ? handleConfirmBill : undefined}
+                        onManage={hasPermission('bill:update') ? handleManageBill : undefined}
                         onDelete={hasPermission('pending-bill:delete') ? handleDeleteBill : undefined}
                         onPrint={handlePrintBill}
                       />
