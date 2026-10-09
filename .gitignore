@@ -66,3 +66,6 @@ Thumbs.db
 # Cache
 .cache/
 .local/
+
+# AI agent tooling (local session state)
+.omo/
