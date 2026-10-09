@@ -13,15 +13,41 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
 
+    if (startDate && Number.isNaN(new Date(startDate).getTime())) {
+      return NextResponse.json({ error: '无效的日期格式: startDate' }, { status: 400 })
+    }
+    if (endDate && Number.isNaN(new Date(endDate).getTime())) {
+      return NextResponse.json({ error: '无效的日期格式: endDate' }, { status: 400 })
+    }
+
+    // 单边日期按开区间生效：只传 startDate = 起始至今，只传 endDate = 历史至该日
+    const startInstant = startDate ? new Date(startDate) : undefined
+    const invoiceEndInstant = endDate ? new Date(endDate) : undefined
+    const billEndInstant = endDate
+      ? (/^\d{4}-\d{2}-\d{2}$/.test(endDate)
+        ? new Date(`${endDate}T23:59:59.999Z`)
+        : new Date(endDate))
+      : undefined
+
     const invoiceWhere: Prisma.InvoiceWhereInput = {
-      ...(startDate && endDate
-        ? { workDate: { gte: new Date(startDate), lte: new Date(endDate) } }
+      ...(startInstant || invoiceEndInstant
+        ? {
+            workDate: {
+              ...(startInstant ? { gte: startInstant } : {}),
+              ...(invoiceEndInstant ? { lte: invoiceEndInstant } : {})
+            }
+          }
         : {}),
       ...(customerId ? { customerId } : {})
     }
     const billWhere: Prisma.BillWhereInput = {
-      ...(startDate && endDate
-        ? { createdAt: { gte: new Date(startDate), lte: new Date(`${endDate}T23:59:59.999Z`) } }
+      ...(startInstant || billEndInstant
+        ? {
+            createdAt: {
+              ...(startInstant ? { gte: startInstant } : {}),
+              ...(billEndInstant ? { lte: billEndInstant } : {})
+            }
+          }
         : {}),
       ...(customerId ? { customerId } : {})
     }
@@ -74,18 +100,18 @@ export async function GET(request: NextRequest) {
         where: customerId ? { id: customerId } : undefined,
         include: {
           invoices: {
-            where: startDate && endDate ? {
+            where: startInstant || invoiceEndInstant ? {
               workDate: {
-                gte: new Date(startDate),
-                lte: new Date(endDate)
+                ...(startInstant ? { gte: startInstant } : {}),
+                ...(invoiceEndInstant ? { lte: invoiceEndInstant } : {})
               }
             } : undefined
           },
           bills: {
-            where: startDate && endDate ? {
+            where: startInstant || billEndInstant ? {
               createdAt: {
-                gte: new Date(startDate),
-                lte: new Date(`${endDate}T23:59:59.999Z`)
+                ...(startInstant ? { gte: startInstant } : {}),
+                ...(billEndInstant ? { lte: billEndInstant } : {})
               }
             } : undefined
           }

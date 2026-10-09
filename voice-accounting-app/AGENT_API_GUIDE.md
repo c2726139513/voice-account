@@ -172,9 +172,10 @@ Bill.status:     创建 → PENDING --结账--> COMPLETED --退回--> PENDING
 | GET | `/api/reports` | `?type=summary\|customer\|monthly\|top-items&startDate=&endDate=` | 见下 |
 
 - `type=summary`（默认）→ `{"summary":{totalInvoices, totalAmount, activeInvoices, availableInvoices, invoicesInBills, totalBills, pendingBills, completedBills}}`；`totalAmount`/`totalInvoices` 受 `startDate`/`endDate` 约束（发票按 `workDate`，账单按 `createdAt`），并支持 `customerId`
-- `type=customer` → `{"customers":[{id,name,phone,email,invoiceCount,invoiceTotal,billCount,billTotal,totalAmount}]}`；日期过滤需**同时传** startDate 和 endDate（按 `workDate` 过滤发票）；`totalAmount === invoiceTotal`（已修复重复计算，两者任取其一）
+- **日期可成对也可单边**（summary/customer/top-items 一致）：只传 `startDate` = 起始至今；只传 `endDate` = 全部历史至该日；单边不再被忽略。传了但格式非法 → 400 `无效的日期格式: startDate|endDate`
+- `type=customer` → `{"customers":[{id,name,phone,email,invoiceCount,invoiceTotal,billCount,billTotal,totalAmount}]}`；日期按 `workDate` 过滤发票（语义同上，支持单边）；`totalAmount === invoiceTotal`（已修复重复计算，两者任取其一）
 - `type=monthly` → `{"monthlyData":[{month:"2026年1月",invoiceCount,totalAmount}]}`；不传日期时默认今年年初至今
-- `type=top-items` → `{"topItems":[{description,totalCount,totalQuantity,totalAmount}]}` 按金额 Top10；日期需成对传入
+- `type=top-items` → `{"topItems":[{description,totalCount,totalQuantity,totalAmount}]}` 按金额 Top10；支持单边日期
 
 ### 公司信息（打印抬头/页脚）
 
@@ -227,7 +228,7 @@ curl -b cookies.txt "/api/reports?type=customer"
 
 在返回的 `customers[]` 中按 `name` 匹配，读 **`invoiceTotal`**（该客户全部发票金额合计）。
 
-- 需要限定时间：追加 `&startDate=2026-01-01&endDate=2026-07-06`（**两个必须同时传**才生效）
+- 需要限定时间：追加 `&startDate=2026-01-01&endDate=2026-07-06`（也可只传其一：单边为开区间，只传 `startDate` = 起始至今，只传 `endDate` = 历史至该日）
 - `totalAmount` 与 `invoiceTotal` 相等（已修复重复计算），读任一即可
 - 仅想看挂在总账单上（未进表单）的发票：`GET /api/invoices/list?customerId={id}&limit=1000` 后自行求和（注意 `pagination.total` 可能大于返回条数，需翻页）
 
