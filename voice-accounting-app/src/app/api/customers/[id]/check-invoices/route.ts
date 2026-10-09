@@ -12,18 +12,18 @@ export async function GET(
     const { id } = await params;
     console.log('Checking invoices for customer:', id);
 
-    // 检查客户是否有账单
-    const invoiceCount = await prisma.invoice.count({
-      where: {
-        customerId: id
-      }
-    });
+    const [invoiceCount, billCount] = await Promise.all([
+      prisma.invoice.count({ where: { customerId: id } }),
+      prisma.bill.count({ where: { customerId: id } })
+    ]);
 
-    console.log('Invoice count result:', invoiceCount);
+    console.log('Invoice count result:', invoiceCount, 'Bill count result:', billCount);
 
     return NextResponse.json({
       hasInvoices: invoiceCount > 0,
-      invoiceCount
+      invoiceCount,
+      hasBills: billCount > 0,
+      billCount
     });
   } catch (error) {
     console.error('Check customer invoices error:', error);

@@ -67,6 +67,10 @@ export default function FilterBar({ customers, filters, onFilterChange, onCustom
           alert(`无法删除客户：该客户有 ${data.invoiceCount} 张账单记录`)
           return
         }
+        if (data.hasBills) {
+          alert(`无法删除客户：该客户有 ${data.billCount} 个账单表单`)
+          return
+        }
       } else {
         alert('检查客户账单失败')
         return
