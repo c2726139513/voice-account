@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireAuth } from '@/lib/api-auth'
+import { requireAuth, requirePermission, checkPermission } from '@/lib/api-auth'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = requireAuth(request)
+  const auth = await requirePermission(request, 'bill:read')
   if (auth instanceof NextResponse) return auth
   try {
     const { id } = await params
@@ -41,7 +41,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = requireAuth(request)
+  const auth = await requirePermission(request, ['bill:delete', 'pending-bill:delete'])
   if (auth instanceof NextResponse) return auth
   try {
     const { id } = await params
@@ -97,6 +97,9 @@ export async function PATCH(
     if (!['PENDING', 'COMPLETED'].includes(status)) {
       return NextResponse.json({ error: '无效的状态' }, { status: 400 })
     }
+
+    const guard = await checkPermission(auth, status === 'COMPLETED' ? 'bill:complete' : ['completed-bill:revert', 'bill:update'])
+    if (guard instanceof NextResponse) return guard
 
     // 如果状态变为COMPLETED，设置结账日期
     const updateData: any = { status }
